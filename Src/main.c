@@ -84,14 +84,41 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			rc_data[i] = captured_value[i] - 1000;
 		};
 		rc_data[4] = 0;
-		if (captured_value[4] > 1500)
-			rc_data[4] |= (1 << 4);
-		if (captured_value[5] > 1500)
-			rc_data[4] |= (1 << 5);
-		if (captured_value[6] > 1500)
-			rc_data[4] |= (1 << 6);
-		if (captured_value[7] > 1500)
-			rc_data[4] |= (1 << 7);
+                //3POS + ALT/POS + RTL
+		if (captured_value[4] > 1520)
+                {
+                    //RTL
+                    rc_data[4] |= (1 << 5);
+                }else if(captured_value[4] > 1415)
+                {
+                    //LOITER
+                    rc_data[4] |= (1 << 4);
+                }else if(captured_value[4] > 1333)
+                {
+                    //MISSION
+                    rc_data[4] |= (1 << 3);
+                }else if(captured_value[4] > 1250)
+                {
+                    //POSCTL
+                    rc_data[4] |= (1 << 2);
+                }else if(captured_value[4] > 1148)
+                {
+                    //ALTCTL
+                    rc_data[4] |= (1 << 1);
+                }else if(captured_value[4] > 1043)
+                {
+                    //MANUAL
+                    rc_data[4] |= (1 << 0);
+                }
+                // CAMERA YAW
+		/* if (captured_value[5] > 1500) */
+		/* 	rc_data[4] |= (1 << 6); */
+                // CAMERA PITCH
+		/* if (captured_value[6] > 1500) */
+		/* 	rc_data[4] |= (1 << 7); */
+                // CAMERA SWITCH
+		/* if (captured_value[7] > 1500) */
+		/* 	rc_data[4] |= (1 << 8); */
 		data_ready = 1;
 	} else {
 		captured_value[pointer] = temp;
