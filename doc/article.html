@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html class="no-js fonts-loaded" lang="ru"><head><script src="article_files/watch.js" async="" type="text/javascript"></script><script src="article_files/analytics.js" async=""></script><script src="article_files/autoUpdate.js" charset="windows-1251" type="text/javascript"></script>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta content="width=1024" name="viewport">
+<title>PPM-to-USB адаптер на STM32F3Discovery, или Подключаем авиамодельный пульт к компьютеру как HID-джойстик с STM32Cube / Geektimes</title>
+
+  <meta name="description" content="
+
+В этой статье я расскажу, как:
+
+Создать проект в STM32CubeMX и настроить таймеры для захвата внешних сигналов. 
+Декодировать PPM-сигнал с авиамодельного пульта. 
+Сделать Human Interface...">
+
+  <meta name="keywords" content="квадрокоптер, симулятор, ppm, turnigy 9x, пульт, hid, stm32, stm32f3discovery, cubemx">
+  <meta property="og:type" content="article">
+<meta property="og:url" content="https://geektimes.ru/post/263346/"> 
+<meta property="og:title" content="PPM-to-USB адаптер на STM32F3Discovery, или Подключаем авиамодельный пульт к компьютеру как HID-джойстик с STM32Cube">
+	<meta property="og:image" content="https://habrastorage.org/files/42a/e17/45b/42ae1745bcc442529f2839504fdf51f4.jpg">
+	<link rel="image_src" href="article_files/42ae1745bcc442529f2839504fdf51f4.jpg"><meta property="og:image" content="https://habrastorage.org/files/727/722/0e5/7277220e5a8c4b749415d16d28091648.jpg">
+	<link rel="image_src" href="article_files/7277220e5a8c4b749415d16d28091648.jpg"><meta property="og:image" content="https://habrastorage.org/files/68b/cc1/4f0/68bcc14f02164d51a17401da82253df4.jpg">
+	<link rel="image_src" href="article_files/68bcc14f02164d51a17401da82253df4.jpg"><meta property="og:image" content="https://habrastorage.org/files/cf1/88d/0a1/cf188d0a1da94acfb233350ff94830ae.jpg">
+	<link rel="image_src" href="article_files/cf188d0a1da94acfb233350ff94830ae.jpg"><meta property="og:image" content="https://habrastorage.org/files/acf/6b2/4fc/acf6b24fc6c449f58c2be3b9ce9d1c1e.png">
+	<link rel="image_src" href="article_files/acf6b24fc6c449f58c2be3b9ce9d1c1e.png"><meta property="og:image" content="https://habrastorage.org/files/d02/a54/3a7/d02a543a7fe148d99d67ae83ad6a8fc9.png">
+	<link rel="image_src" href="article_files/d02a543a7fe148d99d67ae83ad6a8fc9.png"><meta property="og:image" content="https://habrastorage.org/files/eb7/4b2/67e/eb74b267e70140b9842408158de617e8.png">
+	<link rel="image_src" href="article_files/eb74b267e70140b9842408158de617e8.png"><meta property="og:image" content="https://habrastorage.org/files/b5c/234/80f/b5c23480ffca498d8e52e6fef4c0892f.png">
+	<link rel="image_src" href="article_files/b5c23480ffca498d8e52e6fef4c0892f.png"><meta property="og:image" content="https://habrastorage.org/files/c00/160/fb8/c00160fb809b4c7190390d8a8ccd3ac6.png">
+	<link rel="image_src" href="article_files/c00160fb809b4c7190390d8a8ccd3ac6.png"><meta property="og:image" content="https://habrastorage.org/files/934/7e5/17e/9347e517e21540a88c922d35d881c009.png">
+	<link rel="image_src" href="article_files/9347e517e21540a88c922d35d881c009.png"><meta property="og:image" content="https://habrastorage.org/files/597/c20/ddb/597c20ddbe2e4c2898c90db97110e454.png">
+	<link rel="image_src" href="article_files/597c20ddbe2e4c2898c90db97110e454.png"><meta property="og:image" content="https://habrastorage.org/files/1a5/9a8/596/1a59a8596d434c1f8d09ee5e8335adee.png">
+	<link rel="image_src" href="article_files/1a59a8596d434c1f8d09ee5e8335adee.png"><meta property="og:image" content="https://habrastorage.org/files/e76/54c/ea5/e7654cea52cb46c891e5a73e91068b71.png">
+	<link rel="image_src" href="article_files/e7654cea52cb46c891e5a73e91068b71.png"><meta property="og:image" content="https://habrastorage.org/files/3b5/80b/ab0/3b580bab0b894981b8d28eadd9f444b2.png">
+	<link rel="image_src" href="article_files/3b580bab0b894981b8d28eadd9f444b2.png"><meta property="og:image" content="https://habrastorage.org/files/437/703/50b/43770350badf4efcb4d02a11ea2f9db0.png">
+	<link rel="image_src" href="article_files/43770350badf4efcb4d02a11ea2f9db0.png"><meta property="og:image" content="https://habrastorage.org/files/db8/b67/8d8/db8b678d8f7846c9af081a0bfdb0d7b1.png">
+	<link rel="image_src" href="article_files/db8b678d8f7846c9af081a0bfdb0d7b1.png"><meta property="og:image" content="https://habrastorage.org/files/63b/6ac/c06/63b6acc06716451399d01566635d2f87.png">
+	<link rel="image_src" href="article_files/63b6acc06716451399d01566635d2f87.png"><meta property="og:image" content="https://habrastorage.org/files/3fe/080/472/3fe0804729bd4b2f995c5f32a9173d47.png">
+	<link rel="image_src" href="article_files/3fe0804729bd4b2f995c5f32a9173d47.png"><meta property="og:image" content="https://habrastorage.org/files/574/ba7/dde/574ba7dde3794ce4911f955e628f7ce7.png">
+	<link rel="image_src" href="article_files/574ba7dde3794ce4911f955e628f7ce7.png"><meta property="og:image" content="https://habrastorage.org/files/fb6/a32/393/fb6a323933734c7cb3ac4e11550d7420.png">
+	<link rel="image_src" href="article_files/fb6a323933734c7cb3ac4e11550d7420.png"><meta property="og:image" content="https://habrastorage.org/files/1e1/a3d/20d/1e1a3d20dd994c1787f8a8758fcd200e.png">
+	<link rel="image_src" href="article_files/1e1a3d20dd994c1787f8a8758fcd200e.png"><meta property="og:image" content="https://habrastorage.org/files/905/3ec/257/9053ec2573f8438b9a3053f2ef408739.png">
+	<link rel="image_src" href="article_files/9053ec2573f8438b9a3053f2ef408739.png"><meta property="og:image" content="https://habrastorage.org/files/53e/da5/319/53eda5319a6d45b59ee6e265de445992.png">
+	<link rel="image_src" href="article_files/53eda5319a6d45b59ee6e265de445992.png"><meta property="og:image" content="https://habrastorage.org/files/703/86d/84e/70386d84efe24577a958767f8c5b7ae9.png">
+	<link rel="image_src" href="article_files/70386d84efe24577a958767f8c5b7ae9.png"><meta property="og:image" content="https://habrastorage.org/files/abf/64c/e2c/abf64ce2c6874057933df9edb58dff8f.png">
+	<link rel="image_src" href="article_files/abf64ce2c6874057933df9edb58dff8f.png"><meta property="og:image" content="https://habrastorage.org/files/5cf/7da/c9c/5cf7dac9c152498e89ea3948a8549efb.png">
+	<link rel="image_src" href="article_files/5cf7dac9c152498e89ea3948a8549efb.png"><meta property="og:image" content="https://habrastorage.org/files/22f/dd2/aa6/22fdd2aa67154365a6f89f6a2f7f2798.png">
+	<link rel="image_src" href="article_files/22fdd2aa67154365a6f89f6a2f7f2798.png"><meta property="og:image" content="https://habrastorage.org/files/a3c/6fd/07c/a3c6fd07c997415ab94ba603edda628d.png">
+	<link rel="image_src" href="article_files/a3c6fd07c997415ab94ba603edda628d.png"><meta property="og:image" content="https://habrastorage.org/files/1ee/5ad/846/1ee5ad84654545dfbcec807073ef8207.png">
+	<link rel="image_src" href="article_files/1ee5ad84654545dfbcec807073ef8207.png"><meta property="og:image" content="https://habrastorage.org/files/52c/4b0/9db/52c4b09db3074871b917aa74b3375de6.png">
+	<link rel="image_src" href="article_files/52c4b09db3074871b917aa74b3375de6.png"><meta property="og:image" content="https://habrastorage.org/files/153/bc2/3a8/153bc23a87bd4fedad1dd9b04c2aae22.png">
+	<link rel="image_src" href="article_files/153bc23a87bd4fedad1dd9b04c2aae22.png">
+	
+<meta property="og:description" content="В этой статье я расскажу, как:  Создать проект в STM32CubeMX и настроить таймеры для захвата внешних сигналов.  Декодировать PPM-сигнал с авиамодельного...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@geektimes_ru">
+
+  <meta property="al:android:url" content="geektimes://post/263346">
+<meta property="al:android:app_name" content="TechMedia">
+<meta property="al:android:package" content="ru.habrahabr">
+<meta property="al:windows_phone:url" content="geektimes://post/263346">
+<meta property="al:windows_phone:app_name" content="TechMedia">
+<meta property="al:windows_phone:app_id" content="460a6bd6-8955-470f-935e-9ea1726a6060">
+  <link rel="canonical" href="https://geektimes.ru/post/263346/">
+  <link rel="alternate" media="only screen and (max-width: 640px)" href="https://m.geektimes.ru/post/263346/">
+
+
+
+<meta name="yandex-verification" content="72d6c291dae12b16">
+<meta name="referrer" content="unsafe-url">
+<meta name="pocket-site-verification" content="ed24b2b9721edf0a282c5b4a3232c4">
+
+<style type="text/css">
+  @font-face{font-family:'Fira Sans';font-style:normal;font-weight:400;src:url(/fonts/0/FiraSans/hg-FiraSans-Regular.eot);src:local("Fira Sans"),local("FiraSans-Regular"),url(/fonts/0/FiraSans/hg-FiraSans-Regular.eot?#iefix) format("embedded-opentype"),url(/fonts/0/FiraSans/hg-FiraSans-Regular.woff2) format("woff2"),url(/fonts/0/FiraSans/hg-FiraSans-Regular.woff) format("woff"),url(/fonts/0/FiraSans/hg-FiraSans-Regular.ttf) format("truetype")}@font-face{font-family:'Fira Sans';font-style:normal;font-weight:500;src:url(/fonts/0/FiraSans/hg-FiraSans-Medium.eot);src:local("Fira Sans Medium"),local("FiraSans-Medium"),url(/fonts/0/FiraSans/hg-FiraSans-Medium.eot?#iefix) format("embedded-opentype"),url(/fonts/0/FiraSans/hg-FiraSans-Medium.woff2) format("woff2"),url(/fonts/0/FiraSans/hg-FiraSans-Medium.woff) format("woff"),url(/fonts/0/FiraSans/hg-FiraSans-Medium.ttf) format("truetype")}
+</style>
+
+  <link href="article_files/post_common_css.css" rel="stylesheet" media="all">
+  <link href="article_files/all.css" rel="stylesheet" media="all">
+
+<link href="article_files/global_main.css" rel="stylesheet" media="all">
+
+
+
+
+<meta name="yandex-verification" content="6f22b39b973dfed8">
+
+<meta content="Geektimes" name="apple-mobile-web-app-title">
+
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="https://geektimes.ru/images/favicons/apple-touch-icon-57x57.png">
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://geektimes.ru/images/favicons/apple-touch-icon-114x114.png">
+<link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://geektimes.ru/images/favicons/apple-touch-icon-72x72.png">
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://geektimes.ru/images/favicons/apple-touch-icon-144x144.png">
+<link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://geektimes.ru/images/favicons/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="https://geektimes.ru/images/favicons/apple-touch-icon-152x152.png">
+<link rel="icon" type="image/png" href="https://geektimes.ru/images/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="https://geektimes.ru/images/favicons/favicon-16x16.png" sizes="16x16">
+<meta name="application-name" content="Geektimes">
+<meta name="msapplication-TileColor" content="#FFFFFF">
+<meta name="msapplication-TileImage" content="mstile-144x144.png">
+
+  <link title="Geektimes / Комментарии к публикации «PPM-to-USB адаптер на STM32F3Discovery, или Подключаем авиамодельный пульт к компьютеру как HID-джойстик с STM32Cube»" type="application/rss+xml" rel="alternate" href="https://geektimes.ru/rss/post/263346/">
+
+<script>
+  (function(){'use strict';var f,g=[];function l(a){g.push(a);1==g.length&&f()}function m(){for(;g.length;)g[0](),g.shift()}f=function(){setTimeout(m)};function n(a){this.a=p;this.b=void 0;this.f=[];var b=this;try{a(function(a){q(b,a)},function(a){r(b,a)})}catch(c){r(b,c)}}var p=2;function t(a){return new n(function(b,c){c(a)})}function u(a){return new n(function(b){b(a)})}function q(a,b){if(a.a==p){if(b==a)throw new TypeError;var c=!1;try{var d=b&&b.then;if(null!=b&&"object"==typeof b&&"function"==typeof d){d.call(b,function(b){c||q(a,b);c=!0},function(b){c||r(a,b);c=!0});return}}catch(e){c||r(a,e);return}a.a=0;a.b=b;v(a)}}
+  function r(a,b){if(a.a==p){if(b==a)throw new TypeError;a.a=1;a.b=b;v(a)}}function v(a){l(function(){if(a.a!=p)for(;a.f.length;){var b=a.f.shift(),c=b[0],d=b[1],e=b[2],b=b[3];try{0==a.a?"function"==typeof c?e(c.call(void 0,a.b)):e(a.b):1==a.a&&("function"==typeof d?e(d.call(void 0,a.b)):b(a.b))}catch(h){b(h)}}})}n.prototype.g=function(a){return this.c(void 0,a)};n.prototype.c=function(a,b){var c=this;return new n(function(d,e){c.f.push([a,b,d,e]);v(c)})};
+  function w(a){return new n(function(b,c){function d(c){return function(d){h[c]=d;e+=1;e==a.length&&b(h)}}var e=0,h=[];0==a.length&&b(h);for(var k=0;k<a.length;k+=1)u(a[k]).c(d(k),c)})}function x(a){return new n(function(b,c){for(var d=0;d<a.length;d+=1)u(a[d]).c(b,c)})};window.Promise||(window.Promise=n,window.Promise.resolve=u,window.Promise.reject=t,window.Promise.race=x,window.Promise.all=w,window.Promise.prototype.then=n.prototype.c,window.Promise.prototype["catch"]=n.prototype.g);}());
+
+  (function(){function l(a,b){document.addEventListener?a.addEventListener("scroll",b,!1):a.attachEvent("scroll",b)}function m(a){document.body?a():document.addEventListener?document.addEventListener("DOMContentLoaded",function c(){document.removeEventListener("DOMContentLoaded",c);a()}):document.attachEvent("onreadystatechange",function k(){if("interactive"==document.readyState||"complete"==document.readyState)document.detachEvent("onreadystatechange",k),a()})};function q(a){this.a=document.createElement("div");this.a.setAttribute("aria-hidden","true");this.a.appendChild(document.createTextNode(a));this.b=document.createElement("span");this.c=document.createElement("span");this.h=document.createElement("span");this.f=document.createElement("span");this.g=-1;this.b.style.cssText="max-width:none;display:inline-block;position:absolute;height:100%;width:100%;overflow:scroll;font-size:16px;";this.c.style.cssText="max-width:none;display:inline-block;position:absolute;height:100%;width:100%;overflow:scroll;font-size:16px;";
+  this.f.style.cssText="max-width:none;display:inline-block;position:absolute;height:100%;width:100%;overflow:scroll;font-size:16px;";this.h.style.cssText="display:inline-block;width:200%;height:200%;font-size:16px;max-width:none;";this.b.appendChild(this.h);this.c.appendChild(this.f);this.a.appendChild(this.b);this.a.appendChild(this.c)}
+  function w(a,b){a.a.style.cssText="max-width:none;min-width:20px;min-height:20px;display:inline-block;overflow:hidden;position:absolute;width:auto;margin:0;padding:0;top:-999px;left:-999px;white-space:nowrap;font:"+b+";"}function x(a){var b=a.a.offsetWidth,c=b+100;a.f.style.width=c+"px";a.c.scrollLeft=c;a.b.scrollLeft=a.b.scrollWidth+100;return a.g!==b?(a.g=b,!0):!1}function z(a,b){function c(){var a=k;x(a)&&null!==a.a.parentNode&&b(a.g)}var k=a;l(a.b,c);l(a.c,c);x(a)};function A(a,b){var c=b||{};this.family=a;this.style=c.style||"normal";this.weight=c.weight||"normal";this.stretch=c.stretch||"normal"}var B=null,C=null,D=null;function H(){if(null===C){var a=document.createElement("div");try{a.style.font="condensed 100px sans-serif"}catch(b){}C=""!==a.style.font}return C}function I(a,b){return[a.style,a.weight,H()?a.stretch:"","100px",b].join(" ")}
+  A.prototype.load=function(a,b){var c=this,k=a||"BESbswy",y=b||3E3,E=(new Date).getTime();return new Promise(function(a,b){null===D&&(D=!!document.fonts);if(D){var J=new Promise(function(a,b){function e(){(new Date).getTime()-E>=y?b():document.fonts.load(I(c,'"'+c.family+'"'),k).then(function(c){1<=c.length?a():setTimeout(e,25)},function(){b()})}e()}),K=new Promise(function(a,c){setTimeout(c,y)});Promise.race([K,J]).then(function(){a(c)},function(){b(c)})}else m(function(){function r(){var b;if(b=
+  -1!=f&&-1!=g||-1!=f&&-1!=h||-1!=g&&-1!=h)(b=f!=g&&f!=h&&g!=h)||(null===B&&(b=/AppleWebKit\/([0-9]+)(?:\.([0-9]+))/.exec(window.navigator.userAgent),B=!!b&&(536>parseInt(b[1],10)||536===parseInt(b[1],10)&&11>=parseInt(b[2],10))),b=B&&(f==t&&g==t&&h==t||f==u&&g==u&&h==u||f==v&&g==v&&h==v)),b=!b;b&&(null!==d.parentNode&&d.parentNode.removeChild(d),clearTimeout(G),a(c))}function F(){if((new Date).getTime()-E>=y)null!==d.parentNode&&d.parentNode.removeChild(d),b(c);else{var a=document.hidden;if(!0===a||
+  void 0===a)f=e.a.offsetWidth,g=n.a.offsetWidth,h=p.a.offsetWidth,r();G=setTimeout(F,50)}}var e=new q(k),n=new q(k),p=new q(k),f=-1,g=-1,h=-1,t=-1,u=-1,v=-1,d=document.createElement("div"),G=0;d.dir="ltr";w(e,I(c,"sans-serif"));w(n,I(c,"serif"));w(p,I(c,"monospace"));d.appendChild(e.a);d.appendChild(n.a);d.appendChild(p.a);document.body.appendChild(d);t=e.a.offsetWidth;u=n.a.offsetWidth;v=p.a.offsetWidth;F();z(e,function(a){f=a;r()});w(e,I(c,'"'+c.family+'",sans-serif'));z(n,function(a){g=a;r()});
+  w(n,I(c,'"'+c.family+'",serif'));z(p,function(a){h=a;r()});w(p,I(c,'"'+c.family+'",monospace'))})})};"undefined"!==typeof module?module.exports=A:(window.FontFaceObserver=A,window.FontFaceObserver.prototype.load=A.prototype.load);}());
+
+  (function( w ){
+    if( w.document.documentElement.className.indexOf( "fonts-loaded" ) > -1 ){ return; }
+
+    var html = document.documentElement;
+    var FS400 = new w.FontFaceObserver("Fira Sans", { weight: 400 });
+    var FS500 = new w.FontFaceObserver("Fira Sans", { weight: 500 });
+
+    Promise.all([ FS400.check, FS500.check ]).then(function() {
+      html.classList.add('fonts-loaded');
+      sessionStorage.fontsLoaded = true;
+      console.log('fonts-loaded');
+    }).catch(function () {
+      sessionStorage.fontsLoaded = false;
+      console.log('fonts-unloaded');
+    });
+
+    if (sessionStorage.fontsLoaded) {
+      html.classList.add('fonts-loaded');
+    }
+  }(this));
+</script>
+<script src="article_files/jquery-1.js"></script>
+  
+  <script>var N = 5; var ar_duo1 = Math.floor(Math.random()*N+1);</script>
+  <script type="text/javascript" src="article_files/adriver.js"></script>
+
+<script src="article_files/advertising.js"></script>
+<script type="text/javascript">
+  var user_type = 'guest';
+  var adbl = 'no';
+  var page_type = 'other';
+
+  if (typeof adriver == 'undefined'){ adb1 = 'yes'; }
+
+      user_type = 'habrauser';
+
+   page_type = "publish_ugc";
+
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-726094-21',  'auto', { 'userId': '8abe5dd49c26f25d430fda79293f3c00' });
+      ga('create', 'UA-726094-24', 'auto', { 'userId': '8abe5dd49c26f25d430fda79293f3c00', 'name': 'HGM' });
+
+
+
+  (function() {
+    var win = window;
+    var removeUtms = function(){
+      var location = win.location;
+      if (location.search.indexOf('utm_') != -1 && history.replaceState) {
+        history.replaceState({}, '', window.location.toString().replace(/(\&|\?)utm([_a-z0-9=]+)/g, ""));
+      }
+    };
+    ga('send', 'pageview', { 'hitCallback': removeUtms });
+  })();
+
+  ga('require', 'displayfeatures');
+  ga('set', 'dimension1', user_type); // user type - guest/readonly/habrauser
+  ga('set', 'dimension2', adbl);
+  ga('set', 'dimension3', page_type);
+
+  ga('HGM.set', 'dimension1', user_type);
+  ga('HGM.set', 'dimension2', "geektimes");
+  ga('HGM.send', 'pageview');
+</script>
+
+
+
+
+<script>
+  var adcm_config ={
+    id:1034,
+    platformId: 34,
+    profileId:'25f3d6cc88536651f986b60c99f0b07d0ef30c24',
+    tags: ['hub_DIY', 'hub_multicopters', 'g_hardware_modding_and_tuning', 'g_gadgets_and_portable_electronics'],
+    init: function () {
+      window.adcm.call();
+    }
+  };
+</script>
+<script src="article_files/adcm.js" async=""></script>
+  <script src="article_files/processor.js"></script></head>
+
+  <body class="nl">
+    <div class="layout">
+      <div id="TMpanel">
+  <div class="container">
+    <div class="bmenu">
+      <a href="https://tmfeed.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo">TM Feed</a>
+      <a href="https://habrahabr.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo">Хабрахабр</a>
+      <a href="https://geektimes.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo" class="current">Geektimes</a>
+      <a href="https://toster.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo">Тостер</a>
+      <a href="https://moikrug.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo">Мой круг</a>
+      <a href="https://freelansim.ru/?utm_source=tm_geektimes&amp;utm_medium=tm_top_panel&amp;utm_campaign=tm_promo">Фрилансим</a>
+    </div>
+  </div>
+</div>
+
+      <div class="layout__navbar">
+        <div class="main-navbar">
+  <div class="main-navbar__section main-navbar__section_left">
+    <a href="https://geektimes.ru/" class="logo">
+      <span style="display: none;">Geektimes</span>
+      <svg class="icon-svg icon-svg_geektimes">
+        <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-geektimes"></use>
+      </svg>
+    </a>
+    <ul class="nav-links" id="navbar-links">
+  <li class="nav-links__item">
+    <a href="https://geektimes.ru/" class="nav-links__item-link ">Публикации</a>
+  </li>
+  <li class="nav-links__item">
+    <a href="https://geektimes.ru/hubs/" class="nav-links__item-link ">Хабы</a>
+  </li>
+  <li class="nav-links__item">
+    <a href="https://geektimes.ru/companies/" class="nav-links__item-link ">Компании</a>
+  </li>
+  <li class="nav-links__item">
+    <a href="https://geektimes.ru/users/" class="nav-links__item-link ">Пользователи</a>
+  </li>
+  <li class="nav-links__item">
+    <a href="https://geektimes.ru/sandbox/" class="nav-links__item-link ">Песочница</a>
+  </li>
+</ul>
+    <form action="/search/#h" method="get" class="search-form" id="search-form">
+  <!-- Я вернулся братиш, после стольких лет разлуки:) -->
+  <button type="button" class="btn btn_navbar_search" id="search-form-btn">
+    <svg class="icon-svg icon-svg_search">
+      <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-search"></use>
+    </svg>
+  </button>
+  <label class="search-form__field-wrapper">
+    <input name="q" class="search-form__field" id="search-form-field" placeholder="Поиск" tabindex="-1" type="text">
+    <button type="button" class="btn btn_search-clear" id="search-form-clear">
+      <svg class="icon-svg icon-svg_close">
+        <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-close"></use>
+      </svg>
+    </button>
+  </label>
+</form>
+  </div>
+
+  <div class="main-navbar__section main-navbar__section_right">
+
+      <a href="https://geektimes.ru/tracker/" class="btn btn_x-large btn_navbar_tracker">
+        <span style="display: none;">Трекер</span>
+        <svg class="icon-svg icon-svg_tracker">
+          <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-tracker"></use>
+        </svg>
+      </a>
+
+
+      <a href="https://geektimes.ru/topic/add/" class="btn btn_x-large btn_navbar_write-topic">
+        <span class="btn__text">Написать</span>
+        <svg class="icon-svg icon-svg_pencil">
+          <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-pencil"></use>
+        </svg>
+      </a>
+
+      <div class="dropdown dropdown_user" style="margin-left: 12px;">
+        <button type="button" class="btn btn_x-large btn_navbar_user-dropdown" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false" tabindex="0" title="svpcom">
+          <span style="display:none;">Профиль</span>
+            <svg class="icon-svg icon-svg_slug">
+              <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-slug"></use>
+            </svg>
+        </button>
+        <div class="dropdown-container dropdown-container_white" aria-hidden="true" role="menu">
+  <a href="https://geektimes.ru/users/svpcom/" class="dropdown__user-info user-info">
+    <span class="user-info__nickname">svpcom</span><br>
+    <span class="user-info__special">Профиль</span>
+  </a><br>
+    <span class="dropdown__user-stast">У&nbsp;вас <strong>71</strong>&nbsp;голос за&nbsp;карму и&nbsp;публикации, и еще <strong>142</strong> за&nbsp;комментарии</span>
+  <ul class="n-dropdown-menu n-dropdown-menu_profile">
+    <li class="n-dropdown-menu__item">
+      <a href="https://geektimes.ru/users/svpcom/topics/" class="n-dropdown-menu__item-link">Публикации</a>
+    </li>
+      <li class="n-dropdown-menu__item">
+        <a href="https://geektimes.ru/users/svpcom/comments/" class="n-dropdown-menu__item-link">Комментарии</a>
+      </li>
+      <li class="n-dropdown-menu__item">
+        <a href="https://geektimes.ru/conversations/" class="n-dropdown-menu__item-link">Диалоги </a>
+      </li>
+    <li class="n-dropdown-menu__item">
+      <a href="https://geektimes.ru/users/svpcom/favorites/" class="n-dropdown-menu__item-link">Избранное</a>
+    </li>
+    <li class="n-dropdown-menu__item n-dropdown-menu__item_border">
+      <a href="https://geektimes.ru/auth/settings/profile/" class="n-dropdown-menu__item-link">Настройки</a>
+    </li>
+    <li class="n-dropdown-menu__item">
+      <a href="https://geektimes.ru/logout/svpcom/799606632/" class="n-dropdown-menu__item-link">Выйти</a>
+    </li>
+  </ul>
+</div>
+      </div>
+
+  </div>
+</div>
+      </div>
+      <div class="layout__base">
+        
+
+          <div class="profile-header js-user_187912">
+
+  <div class="profile-header__summary author-info author-info_profile ">
+    <a href="https://geektimes.ru/users/AlexeyStn/" class="author-info__image" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_top', 'profile', 'AlexeyStn');}">
+        <img src="article_files/cad7b8aa89a268091cf5897bbb47f5ac.png" class="author-info__image-pic">
+
+    </a>
+
+    <div class="author-info__desc">
+      <div class="author-info__username">
+         <a href="https://geektimes.ru/users/AlexeyStn/" class="author-info__name" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_top', 'profile', 'AlexeyStn');}">Алексей Станкевич</a> 
+        <a href="https://geektimes.ru/users/AlexeyStn/" class="author-info__nickname" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_top', 'profile', 'AlexeyStn');}">@AlexeyStn</a>
+        
+      </div>
+        <div class="author-info__specialization">
+          Инженер
+        </div>
+    </div>
+  </div>
+
+    <div class="profile-header__stats">
+
+      <div class="karma__widjet voting-wjt voting-wjt_user-profile js-karma  ">
+                <button type="button" class="voting-wjt__button voting-wjt__button_plus js-vote_plus" onclick="userKarmaVote(this, 187912, 1, 1); if (typeof ga === 'function') { ga('send', 'event', 'author_info_top', 'vote_plus', 'AlexeyStn' );}" title="Повысить карму">
+                  <span>↑</span>
+                </button>
+
+        <div class="voting-wjt__counter js-karma-mark voting-wjt__counter_positive " title="34 голоса">
+          <div class="voting-wjt__counter-score js-karma_num">34,0</div>
+          <div class="voting-wjt__label">карма</div>
+        </div>
+
+                <button type="button" class="voting-wjt__button voting-wjt__button_minus js-vote_minus" onclick="userKarmaVote(this, 187912, 1, -1); if (typeof ga === 'function') { ga('send', 'event', 'author_info_top', 'vote_minus', 'AlexeyStn' );}" title="Понизить карму">
+                  <span>↓</span>
+                </button>
+      </div>
+
+      <div class="statistic statistic_user-rating" title="Рейтинг пользователя">
+        <div class="statistic__value statistic__value_magenta">0,0</div>
+        <div class="statistic__label">рейтинг</div>
+      </div>
+
+          <a href="https://geektimes.ru/conversations/AlexeyStn/" class="user-mail send_mail" title="Написать письмо" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'write_message', 'AlexeyStn');}">
+            <span class="user-mail__label">Написать</span>
+          </a>
+    </div>
+
+
+    <div class="profile-header__buttons">
+
+
+          <button type="button" class="btn btn_blue btn_large " id="followUser" title="Подписаться на пользователя" data-login="AlexeyStn" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'subscribe', 'AlexeyStn'); }">Подписаться</button>
+
+          <button type="button" class="btn btn_blue btn_subscribed btn_large hidden" id="unfollowUser" title="Вы подписаны на пользователя" data-login="AlexeyStn" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'unsubscribe', 'AlexeyStn'); }">Подписан</button>
+    </div>
+</div>
+
+  <div class="content_wrapper column-wrapper_content">
+    <div class="column-wrapper js-sticky-wrapper">
+      <div class="content_left js-content_left">
+          <div class="tabs">
+    <ul class="tabs-menu tabs-menu_habrahabr">
+          <li class="tabs-menu__item tabs-menu__item_user-profile tabs-menu__item_inline">
+            <a href="https://geektimes.ru/users/AlexeyStn/" class="tab-item tab-item_stacked ">
+              <span class="tab-item__value stats">
+                <span class="stats__counters stats__counters_big">
+                  <strong class="counter"></strong>
+                </span>
+                <span class="stats__value">Профиль</span>
+            </span></a>
+          </li>
+          <li class="tabs-menu__item tabs-menu__item_user-profile tabs-menu__item_inline">
+            <a href="https://geektimes.ru/users/AlexeyStn/topics/" class="tab-item tab-item_stacked tab-item_current">
+              <span class="tab-item__value stats">
+                <span class="stats__counters stats__counters_big">
+                  <strong class="counter">2</strong>
+                </span>
+                <span class="stats__value">Публикации</span>
+            </span></a>
+          </li>
+          <li class="tabs-menu__item tabs-menu__item_user-profile tabs-menu__item_inline">
+            <a href="https://geektimes.ru/users/AlexeyStn/comments/" class="tab-item tab-item_stacked ">
+              <span class="tab-item__value stats">
+                <span class="stats__counters stats__counters_big">
+                  <strong class="counter">27</strong>
+                </span>
+                <span class="stats__value">Комментарии</span>
+            </span></a>
+          </li>
+          <li class="tabs-menu__item tabs-menu__item_user-profile tabs-menu__item_inline">
+            <a href="https://geektimes.ru/users/AlexeyStn/favorites/" class="tab-item tab-item_stacked ">
+              <span class="tab-item__value stats">
+                <span class="stats__counters stats__counters_big">
+                  <strong class="counter">137</strong>
+                </span>
+                <span class="stats__value">Избранное</span>
+            </span></a>
+          </li>
+          <li class="tabs-menu__item tabs-menu__item_user-profile tabs-menu__item_inline">
+            <a href="https://geektimes.ru/users/AlexeyStn/subscription/followers/" class="tab-item tab-item_stacked ">
+              <span class="tab-item__value stats">
+                <span class="stats__counters stats__counters_big">
+                  <strong class="counter">6</strong>
+                </span>
+                <span class="stats__value">Подписчики</span>
+            </span></a>
+          </li>
+    </ul>
+
+  </div>
+
+
+        <div class="post_show">
+          
+    <div class="post post_full" id="post_263346">
+  <div class="post__header">
+    <span class="post__time_published"> 7 октября 2015 в 23:32</span>
+
+    <h1 class="post__title">
+      
+      <span>PPM-to-USB адаптер на STM32F3Discovery, или Подключаем авиамодельный пульт к компьютеру как HID-джойстик с STM32Cube</span>
+      
+
+
+
+
+
+
+
+    </h1>
+
+      <div class="hubs">
+          <a href="https://geektimes.ru/hub/DIY/" class="hub " title="Вы не подписаны на этот хаб" onclick="if (typeof ga === 'function') { ga('send', 'event', 'hub', 'post page', 'DIY или Сделай сам'); }">DIY или Сделай сам</a><span class="profiled_hub" title="Профильный хаб">*</span>, 
+          <a href="https://geektimes.ru/hub/multicopters/" class="hub " title="Вы не подписаны на этот хаб" onclick="if (typeof ga === 'function') { ga('send', 'event', 'hub', 'post page', 'Мультикоптеры'); }">Мультикоптеры</a>
+      </div>
+  </div>
+
+  <div class="post__body post__body_full">
+    <div class="content html_format"><img src="article_files/42ae1745bcc442529f2839504fdf51f4.jpg"><br>
+<br>
+В этой статье я расскажу, как:<br>
+<ul>
+<li>Создать проект в STM32CubeMX и настроить таймеры для захвата внешних сигналов. </li>
+<li>Декодировать PPM-сигнал с авиамодельного пульта. </li>
+<li>Сделать Human Interface Device на STM32 и написать свой HID Report Descriptor. </li>
+<li>Полетать в симуляторе на гоночном квадрокоптере. :) </li>
+</ul><a name="habracut"></a><br>
+<h3><b>Предисловие</b></h3><br>
+В последнее время всё большую популярность набирают FPV-гонки на 
+квадрокоптерах 250-го класса (FPV – First Person View). Число 250 
+означает расстояние между осями моторов по диагонали, типичное для 
+маленьких манёвренных коптеров. Такие аппараты строят на прочных 
+карбоновых рамах, выдерживающих падения и столкновения. На мощные моторы
+ ставят пропеллеры диаметром 5-6 дюймов с большим шагом (углом наклона 
+лопастей) для максимально динамичного полёта. Изображение с аналоговой 
+курсовой видеокамеры передаётся на частоте 5.8ГГц на монитор или 
+видео-очки пилота. Поскольку цифровая передача через WiFi создаёт 
+большую задержку (200-300 мс), видео всегда транслируется по аналоговому
+ каналу. Для записи эффектных роликов на борт ставят action-камеры 
+(GoPro, Mobius, SJcam, Xiaomi Yi и др.).<br>
+<br>
+<div style="text-align:center;"><img src="article_files/7277220e5a8c4b749415d16d28091648.jpg" width="40%"></div><br>
+<div class="spoiler"><b class="spoiler_title">Вот несколько захватывающих видео про FPV-коптеры:</b><div class="spoiler_text"><iframe src="article_files/NsxyV-kgfio.html" allowfullscreen="" frameborder="0" height="315" width="560"></iframe><br>
+<iframe src="article_files/1MBW8zoZUR4.html" allowfullscreen="" frameborder="0" height="315" width="560"></iframe><br>
+<iframe src="article_files/70pusNNunMA.html" allowfullscreen="" frameborder="0" height="315" width="560"></iframe></div></div><br>
+Перед тем, как строить свой мини-квадрокоптер, мне хотелось полетать в 
+симуляторе и понять, будут ли мне интересны FPV-гонки. Для тренировок 
+хорошо подходит симулятор <a href="http://fpv-freerider.itch.io/fpv-freerider">FPV FreeRider</a>. Он недорогой, имеет бесплатную демо-версию и, по словам опытных пилотов, весьма точно имитирует реальную механику полёта.<br>
+<br>
+Управлять летательным аппаратом в симуляторе можно с клавиатуры или с 
+джойстика. Клавиатура плохо подходит для пилотирования, так как кнопками
+ можно передать лишь дискретное значение (кнопка нажата/не нажата) и 
+нельзя передать плавно изменяющиеся промежуточные значения. Джойстики от
+ игровых консолей с аналоговыми стиками подходят намного лучше, однако у
+ них весьма маленький ход стика, что не позволяет управлять аппаратом 
+достаточно точно. Идеальный вариант для симулятора – это авиамодельный 
+пульт, подключенный к компьютеру через специальный переходник, благодаря
+ которому операционная система видит его как джойстик.<br>
+<br>
+У меня уже был один квадрокоптер, собранный для неспешных полётов и 
+фотосъёмки, но слишком большой и тяжёлый для гонок. Соответственно, был и
+ пульт – Turnigy 9X (на первой иллюстрации). На задней стороне у него 
+есть разъём для подключения адаптера, на который выводится сигнал PPM. 
+Этот сигнал представляет собой короткие импульсы с интервалами от 1 до 2
+ миллисекунд, длительности которых соответствуют положению органов 
+управления (подробнее о нём в разделе про декодирование).<br>
+<br>
+<div style="text-align:center;"><img src="article_files/68bcc14f02164d51a17401da82253df4.jpg" width="33%"></div><br>
+<br>
+Надо сказать, что переходники для подключения пульта с PPM к USB уже 
+давно выпускаются и вовсю продаются. Подобный переходник в форм-факторе 
+флешки можно купить за 5 долларов в Китае или немного дороже в 
+российских магазинах. Существуют и <a href="http://thomaspfeifer.net/ppm2usb_adapter_en.htm">open-source проекты</a> адаптеров на контроллерах AVR.<br>
+<br>
+Но острое желание немедленно полетать пришло ко мне поздно вечером, 
+когда все московские авиамодельные магазины были уже закрыты. Ждать утра
+ не хотелось, травить и паять плату с ATmega было некогда, поэтому я 
+решил сделать адаптер PPM-USB на плате STM32F3Discovery, которая давно 
+лежала без дела и как раз оказалась под рукой.<br>
+<br>
+<h3><b>Что потребуется</b></h3><br>
+Для того, чтобы сделать переходник, понадобятся:<br>
+<br>
+<ul>
+<li>Плата <a href="http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/PF254044">STM32F3Discovery</a>. Подойдёт любая плата с STM32, у которого есть аппаратный USB, разведённый на плате. </li>
+<li>Двухжильный провод c мини-джеком 3,5 мм с одной стороны (для 
+Turnigy) и двумя BLS-разъёмами, надеваемыми на штыри, с другой (для 
+Discovery).</li>
+<li>Генератор кода <a href="http://www.st.com/stm32cube">STM32CubeMX</a>. </li>
+<li>IDE с компилятором для ARM. Я использую <a href="http://www.keil.com/uvision/">Keil uVision 5</a>. Бесплатная демонстрационная версия поддерживает проекты с исполняемым кодом до 32 кБ, этого хватит для нашей несложной задачи.</li>
+<li>Пульт Turnigy 9X или любой другой с PPM-выходом. Проект был также успешно протестирован с FlySky FS-i6.</li>
+</ul><br>
+Отладочные платы Discovery весьма дорогие. Описываемая F3 стоит около 
+$20 и её возможности избыточны для такого простого проекта. Я 
+использовал её, потому что на момент написания статьи это была 
+единственная плата с аппаратным USB, что нашлась у меня дома. Тем, кто 
+ещё не покупал её, могу посоветовать обратить внимание на миниатюрные 
+платы с контроллером <a href="http://ru.aliexpress.com/wholesale?shipCountry=ru&amp;SearchText=stm32f103c8t6+board">STM32F103C8T6 с AliExpress за $3</a>
+ и программатор ST-Link оттуда же. Процесс работы не отличается от 
+описанного в статье. Разве что надо будет выбрать в начале другой 
+контроллер, указать наличие кварцевого резонатора и использовать чуть 
+другую распиновку.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/cf188d0a1da94acfb233350ff94830ae.jpg" width="30%"></div><br>
+<br>
+<a name="cube"></a><h3><b>Создание проекта в STM32CubeMX</b></h3><br>
+STM32Cube – это комплекс, разработанный STMicroelectronics для того, 
+чтобы облегчить жизнь разработчикам устройств на STM32. Он состоит из 
+графической утилиты CubeMX, HAL-драйверов и Middleware-компонентов.<br>
+<br>
+<i>CubeMX</i> – инструмент для создания проектов и инициализации 
+периферии. Чтобы начать работу, достаточно выбрать контроллер, 
+расставить галочки напротив нужных модулей, выбрать в меню требуемые 
+режимы и в нескольких полях ввести желаемые значения. CubeMX сам 
+сгенерирует проект и подключит к нему необходимые библиотеки. 
+Разработчику устройства останется только написать логику работы 
+приложения.<br>
+<br>
+<i>HAL-драйверы</i> (Hardware Abstraction Layer) представляют собой API 
+для работы с модулями и периферией микроконтроллера. HAL позволяет 
+отделить верхний слой приложения, которое создаёт разработчик, от работы
+ с регистрами и сделать код программы максимально переносимым между 
+семействами контроллеров STM32.<br>
+<br>
+<i>Middlewares</i>, или промежуточные компоненты, включают операционную 
+систему FreeRTOS, библиотеку для работы с файловой системой, библиотеки 
+USB, TCP/IP и т.д.<br>
+<br>
+Казалось бы, теперь можно «программировать мышкой» вместо того, чтобы 
+вручную записывать биты в регистры. Но простота и удобство не отменяют 
+того, что нужно изучать документацию, особенно в случаях, когда надо 
+выжать максимум быстродействия, минимум энергопотребления или 
+использовать периферию в нестандартных режимах. STM32Cube пока ещё не 
+покрывает на 100% всех возможностей микроконтроллера, но приближается к 
+этому. STMicroelectronics время от времени обновляют Cube, расширяют 
+функции и исправляют ошибки. Поэтому, если у вас уже установлен Cube, 
+проверьте, чтоб он был последней версии.<br>
+<br>
+<h5><b>Начальные настройки</b></h5><br>
+<div style="text-align:center;"><img src="article_files/acf6b24fc6c449f58c2be3b9ce9d1c1e.png"></div><br>
+<br>
+Работа с проектом начинается с выбора контроллера. Запускаем STM32CubeMX, нажимаем <i>New Project</i>. На вкладке <i>MCU Selector</i> можно по фильтрам подобрать желаемый контроллер. Так как у нас готовая отладочная плата, то на вкладке <i>Board Selector</i>, находим <i>STM32F3Discovery</i>. После выбора платы появится изображение контроллера с подсвеченными и подписанными пинами.<br>
+<br>
+В верхней части окна четыре больших вкладки:<br>
+<i>Pinout</i> – для настройки функций пинов и предварительной настройки модулей. На ней мы находимся в данный момент.<br>
+<i>Clock Configuration</i> – настройка тактирования, PLL, делителей.<br>
+<i>Configuration</i> – более детальная настройка периферии и middleware.<br>
+<i>Power Consumption Calculator</i> – расчёт потребляемой микроконтроллером мощности.<br>
+<br>
+<img src="article_files/d02a543a7fe148d99d67ae83ad6a8fc9.png"><br>
+<br>
+В левом меню на вкладке <i>Pinout</i> можно задействовать нужную 
+периферию, а на схеме контроллера выбрать функцию для любого из выводов 
+микроконтроллера. Напротив некоторых пунктов слева стоят значки 
+предупреждений. Это значит, что модули (в данном случае ADC, DAC, 
+OPAMP2, RTC) сейчас можно использовать не полностью, так некоторые их 
+выводы уже заняты другими функциями.<br>
+<br>
+Зелёным на схеме контроллера подсвечены настроенные пины. Поскольку мы 
+выбрали не голый контроллер без обвязки, а готовую отладочную плату 
+F3-Discovery, то некоторые выводы уже сконфигурированы, например, к PA0 
+подключена синяя кнопка, а к PE8...15 – светодиоды. Оранжевым выделены 
+те пины, к которым на Discovery подключены какие-то внешние устройства, 
+но периферийные модули для них ещё не настроены. Как видим, это пины для
+ USB, кварцевых резонаторов, SPI и I2C для гироскопа и компаса, DP и DM 
+для USB. Серые выводы в данный момент не используются, любые из них мы 
+можем применить для своих целей.<br>
+<br>
+<h5><b>Выбор входа</b></h5><br>
+Мы собираемся захватывать длительности импульсов, значит вход должен 
+быть подключен к одному из каналов любого таймера. Кроме того, уровень 
+сигнала с Turnigy 9X не 3,3В, как напряжение питания STM32, а 5В. Паять 
+делитель напряжения нам лень, поэтому надо выбрать вход, который 
+выдержит 5В (такие входы называют 5V-tolerant). Подходящие пины можно 
+посмотреть в <a href="http://www.st.com/web/en/resource/technical/document/datasheet/DM00058181.pdf">datasheet</a> на STM32F303VCT6 в разделе <i>Pinouts and Pin Description</i>.
+ Таймеров в STM32F3 много, они разбросаны почти по всем пинам. Удобный 
+вариант – PC6. Он выдерживает 5 Вольт и находится в левом нижнем углу 
+платы, рядом с GND. Назначим на этот пин 1-й канал 3-го таймера 
+TIM3_CH1.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/eb74b267e70140b9842408158de617e8.png"></div><br>
+<br>
+<h5><b>Настройка тактирования</b></h5><br>
+Для работы USB микроконтроллер должен тактироваться от очень стабильной 
+частоты, именно поэтому почти во всех USB-устройствах установлены 
+кварцевые резонаторы. Стабильности частоты встроенного RC-генератора 
+недостаточно для USB. Но на плате STM32F3 Discovery разработчики по 
+какой-то причине пожадничали и не поставили кварц. Однако, если 
+внимательно изучить <a href="http://www.st.com/st-web-ui/static/active/en/resource/technical/layouts_and_diagrams/schematic_pack/stm32f3discovery_sch.zip">схему</a>, то можно увидеть, что на вход <i>PF0-OSC_IN</i>, куда должен подключаться кварц, подведён сигнал <i>MCO</i>. Он поступает от программатора ST-Link на этой же плате, в котором кварц есть. В <a href="http://www.st.com/st-web-ui/static/active/en/resource/technical/document/user_manual/DM00063382.pdf">User Manual</a> для F3 Discovery (UM1570) в разделе <i>OSC Clock</i> сказано, что на эту линию подаются 8 МГц.<br>
+<br>
+<img src="article_files/b5c23480ffca498d8e52e6fef4c0892f.png" width="30%"><img src="article_files/c00160fb809b4c7190390d8a8ccd3ac6.png" width="65%"><br>
+<br>
+Таким образом, микроконтроллер тактируется от внешнего источника. Этот 
+режим называется Bypass. В меню настройки периферии в разделе <i>RCC</i> для тактирования <i>High Speed Clock</i> выберем <i>BYPASS Clock Source</i>.<br>
+<br>
+<img src="article_files/9347e517e21540a88c922d35d881c009.png"><br>
+<br>
+Перед тем, как приступить к более детальной настройке тактирования, 
+отметим в меню периферии, что микроконтроллер будет выступать в роли 
+USB-устройства.<br>
+<br>
+<img src="article_files/597c20ddbe2e4c2898c90db97110e454.png"><br>
+<br>
+Теперь можно перейти к следующей большой вкладке – <i>Clock Configuration</i>.
+ Здесь мы увидим огромную схему, на которой показано, какие тактовые 
+сигналы присутствуют в микроконтроллере, откуда они берутся, как они 
+ветвятся, умножаются и делятся. Жёлтым цветом я выделил те параметры, на
+ которые следует обратить внимание.<br>
+<br>
+<img src="article_files/1a59a8596d434c1f8d09ee5e8335adee.png"><br>
+<br>
+Проверим, что входная частота <i>Input Frequency</i> равна 8 МГц.<br>
+Переключатель <i>PLL Source Mux</i> ставим в положение <i>HSE</i> (High Speed External), чтоб тактироваться от внешнего, а не внутреннего источника.<br>
+<i>PLL</i> – Phase Lock Loop, или ФАПЧ – фазовая автоподстройка частоты, служит для умножения внешней частоты в несколько раз. Множитель <i>PLLMul</i> настроим на 9. Тогда мы достигнем максимальной возможной частоты для STM32F303 – 72 МГц.<br>
+<i>System Clock Mux</i> должен находиться в положении <i>PLLCLK</i>, чтобы для тактирования контроллера использовалась умноженная частота с PLL.<br>
+Для модуля USB нужно 48 МГц, поэтому поставим делитель 1,5 перед USB.<br>
+Обратим внимание на частоту <i>APB1 timer clocks</i> в левой части схемы. Она подаётся на таймеры и пригодится нам в дальнейшем.<br>
+Если какая-то частота настроена некорректно, превышает максимально 
+возможное значение или переключатели находятся в недопустимом положении,
+ то CubeMX выделит это место красным.<br>
+<br>
+<h5><b>Настройка таймера</b></h5><br>
+Для измерения длительности импульсов мы запустим таймер TIM3 в режиме захвата Input Capture. В <a href="http://www.st.com/web/en/resource/technical/document/reference_manual/DM00043574.pdf">Reference Manual</a> в разделе <i>General-purpose timers (TIM2/TIM3/TIM4)</i> есть схема иллюстрирующая работу таймеров. Цветами я выделил сигналы и регистры, используемые в режиме Input Capture.<br>
+<br>
+<img src="article_files/e7654cea52cb46c891e5a73e91068b71.png"><br>
+Сигнал тактирования, выделенный зелёным, непрерывно приходит в регистр 
+счётчика CNT и увеличивает его значение на 1 каждый такт. В делителе <i>Prescaler PSC</i> частота тактового сигнала может уменьшаться для более медленного отсчёта.<br>
+На вход <i>TIMx_CH1</i> приходит внешний сигнал. <i>Edge Detector</i> 
+распознаёт фронты входного сигнала – переходы из 0 в 1 или из 1 в 0. При
+ регистрации фронта он подаёт две команды, выделенные жёлтым:<br>
+– команда для записи значения счётчика <i>CNT</i> в регистр <i>Capture/compare 1 register (CCR1) </i>и вызов прерывания <i>CC1I</i>.<br>
+– команда для <i>Slave mode controller</i>, по которой значение <i>CNT</i> сбрасывается в 0 и отсчёт начинается сначала.<br>
+<br>
+Вот иллюстрация процесса на временной диаграмме:<br>
+<br>
+<img src="article_files/3b580bab0b894981b8d28eadd9f444b2.png" width="50%"><br>
+<br>
+При возниконовении прерывания мы будем совершать действия с захваченным 
+значением. Если входные импульсы приходят слишком часто, а действия, 
+происходящие в обработчике прерывания, слишком долгие, то значение CCR1 
+может перезаписаться до того, как мы прочитали предыдущее. В этом случае
+ нужно проверять флаг перезаписи (Overcapture) или же применять DMA 
+(Direct Memory Access), когда данные из CCR1 автоматически заполняют 
+заранее подготовленный массив в памяти. В нашем случае самый короткий 
+импульс имеет длительность 1 миллисекунду, а обработчик прерывания будет
+ простым и коротким, поэтому беспокоиться о перезаписи не стоит.<br>
+<br>
+Вернёмся на вкладку <i>Pinout</i> и настроим таймер <i>TIM3</i> в меню <i>Peripherals</i>.<br>
+<br>
+<img src="article_files/43770350badf4efcb4d02a11ea2f9db0.png"><br>
+<br>
+<i>Slave Mode: Reset Mode </i>– означает, что при некотором событии таймер будет сбрасываться на 0.<br>
+<i>Trigger Source: TI1FP1</i> – событие, используемое для сброса и запуска таймера – это фронт сигнала, захваченный со входа TI1.<br>
+<i>ClockSource: Internal Clock</i> – таймер тактируется от внутреннего генератора микроконтроллера.<br>
+<i>Channel 1: Input Capture direct mode</i> – захват интервалов с 1-го канала в регистр CCR1.<br>
+<br>
+На следующей большой вкладке <i>Configuration</i> сделаем дополнительные настройки таймера.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/db8b678d8f7846c9af081a0bfdb0d7b1.png"></div><br>
+<br>
+<div style="text-align:center;"><img src="article_files/63b6acc06716451399d01566635d2f87.png"></div><br>
+<br>
+<i>Prescaler</i> – делитель таймера. Если он равен 0, частота берётся 
+напрямую с шины тактирования APB clock – 72 МГц. Если prescaler равен 1 –
+ частота делится на 2 и становится равной 36 МГц. Установим делитель на 
+71, чтобы частота делилась на 72. Тогда частота таймера будет равна 1 
+МГц и интервалы будут измеряться с разрешением в 1 микросекунду.<br>
+<i>Counter Period</i> – установим максимально возможное 16-битное 
+значение 0xFFFF. Период важен для генерации временных интервалов, 
+например, для ШИМ. Но для захвата сигналов период не важен, сделаем его 
+заведомо большим любых входных импульсов.<br>
+<i>Polarity Selection: Falling Edge</i> – значения таймера будут захватываться по заднему фронту сигнала на входе.<br>
+На вкладке <i>NVIC Settings</i> поставим галку <i>TIM3 global interrupt</i>, чтобы при событиях, связанных с 3-м таймером генерировалось прерывание.<br>
+<br>
+<h5><b>Настройка USB-device</b></h5><br>
+Мы уже отметили, что контроллер будет USB-устройством. Так как джойстик относится к классу HID-устройств, то в меню <i>Middlewares -&gt; USB_DEVICE</i> выберем <i>Class For FS IP: Human Interface Device Class (HID)</i>. Тогда CubeMX подключит к проекту библиотеки для HID-устройства.<br>
+<br>
+<img src="article_files/3fe0804729bd4b2f995c5f32a9173d47.png"><br>
+<br>
+Зайдём в настройки <i>USB_DEVICE</i> на вкладке <i>Configuration</i> в разделе <i>Middlewares</i>:<br>
+<br>
+<div style="text-align:center;"><img src="article_files/574ba7dde3794ce4911f955e628f7ce7.png"></div><br>
+<br>
+<i>Vendor ID</i> и <i>Product ID</i> – это два 16-битных идентификатора,
+ уникальных для каждой модели USB-устройств. VID соответствует 
+производителю устройства, а PID каждый производитель присваивает, 
+руководствуясь своими соображениями. Официальный список VID и PID мне 
+найти не удалось, я отыскал лишь <a href="http://www.linux-usb.org/usb.ids">базу идентификаторов</a>, поддерживаемую энтузиастами. Чтобы заиметь собственный Vendor ID, нужно обратиться к USB Implementers Forum на <a href="http://www.usb.org/developers/vendor/">usb.org</a>
+ и заплатить несколько тысяч долларов. Небольшие компании или 
+open-source разработчики, которым не по карману свой VID, могут 
+обратиться с запросом к производителю USB-микросхем и официально 
+получить для своего проекту пару VID/PID. Такую услугу предлагают, 
+например, FTDI или Silicon Laboratories.<br>
+<br>
+Если подключить к компьютеру два устройства с одинаковыми VID/PID, но 
+разного типа (например, одно – HID-устройство, а другое – Mass Storage),
+ то операционная система попытается установить для них один и тот же 
+драйвер, и как минимум одно из них работать не будет. Именно поэтому 
+пары VID/PID для разных моделей устройств должны быть уникальными.<br>
+<br>
+Поскольку устройство мы делаем для себя, продавать и распространять его 
+не собираемся, то оставим VID 0x0483, соответствующий 
+STMicroelectronics, а PID придумаем свой. По умолчанию CubeMX предлагает
+ PID 0х5710 для HID-устройства. Заменим его, например, на 0x57FF. <br>
+<br>
+Строку <i>Product string</i> заменим на <i>STM32 PPM-USB Adapter</i>. Это название будет отображаться в списке устройств в панели управления Windows. Серийный номер (S\N) пока менять не будем.<br>
+<br>
+Когда Windows обнаруживает обнаруживает устройство с комбинацией VID, 
+PID и S\N, которая раньше ей не встречалась, система устанавливает для 
+него соответствующий драйвер. Если же комбинация VID, PID и S\N уже 
+использовалась, то Windows автоматически подставляет ранее 
+использованный драйвер. Вы можете это увидеть, например, когда 
+подключаете Flash-накопитель к USB. Первый раз подключение и установка 
+занимает некоторое время. При последующих подключениях накопитель 
+начинает работу почти мгновенно. Однако, если подключить другой 
+экземпляр Flash-накопителя той же модели, но с другим серийным номером, 
+то система будет ставить для него новый драйвер, даже несмотря на то, 
+что VID и PID у него те же самые.<br>
+<br>
+Поясню, почему это важно. Если Вы создали на STM32 USB-мышь со своими 
+VID, PID и S\N, подключили её к компьютеру, а затем сделали 
+USB-джойстик, не изменив VID, PID и S\N, то Windows воспримет новое 
+устройство как мышь, которая уже использовалась в системе, и не будет 
+устанавливать драйвер джойстика. Соответственно, джойстик работать не 
+будет. Поэтому, если хотите изменить тип своего устройства, оставив 
+VID/PID без изменений, то обязательно меняйте его серийный номер.<br>
+<br>
+<h5><b>Генерирование проекта для IDE</b></h5><br>
+Последние настройки, которые нужно сделать – это настройки генерирования проекта. Это делается через <i>Project -&gt; Settings</i>… Там мы зададим имя, папку назначения и желаемую IDE, под которую CubeMX создаст проект. Я выбрал <i>MDK-ARM V5</i>, так как пользуюсь Keil uVision 5. На вкладке <i>Code Generator</i> можно поставить галку <i>Copy only the necessary library files</i>, чтобы не загромождать проект лишними файлами.<br>
+<br>
+Нажимаем кнопку <i>Project -&gt; Generate code</i>. CubeMX создаст 
+проект с кодом, который можно открыть в Keil uVision и без 
+дополнительных настроек скомпилировать и прошить. В файле <i>main.c</i> в функции <i>main(void)</i>
+ уже вставлены функции для инициализации тактирования, портов, таймера и
+ USB. В них модули микроконтроллера настраиваются в соответствии с теми 
+режимами, которые мы задали в CubeMX.<br>
+<br>
+<img src="article_files/fb6a323933734c7cb3ac4e11550d7420.png"><br>
+<br>
+В коде часто встречаются конструкции такого вида:<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-comment">/* USER CODE BEGIN 0 */</span>
+(...)
+<span class="hljs-comment">/* USER CODE END 0 */</span>
+</code></pre><br>
+Предполагается, что пользователь будет вставлять свой код в эти секции. Если в настройках проекта CubeMX включена опция <i>Keep User Code when re-generating</i>,
+ то при вторичном генерировании уже существующего проекта код, 
+заключённый между этими строками, перезаписываться не будет. К 
+сожалению, сохраняются только секции, созданные CubeMX. Секции <i>/* USER CODE */</i>,
+ созданные пользователем, будут утеряны. Поэтому, если вы после 
+написания кода в IDE хотите вернуться в CubeMX и сгенерировать проект 
+заново с новыми настройками, рекомендую сделать резервную копию проекта.<br>
+<br>
+В настройках прошивки в uVision (<i>Flash -&gt; Configure Flash Tools</i>) советую включить опцию <i>Reset after flash</i>,
+ чтобы микроконтроллер стартовал сразу после перепрошивки. По умолчанию 
+она отключена, и после каждой перепрошивки приходится нажимать кнопку 
+Reset на плате.<br>
+<br>
+<img src="article_files/1e1a3d20dd994c1787f8a8758fcd200e.png"><br>
+<br>
+<a name="ppm"></a><h3><b>Декодирование PPM-сигнала</b></h3><br>
+PPM – Pulse Position Modulation – метод кодирования передаваемых 
+сигналов, очень широко распространённый в авиамодельной электронике. Он 
+представляет собой последовательности импульсов, временные интервалы 
+между которыми соответствуют передаваемым числовым значениям.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/9053ec2573f8438b9a3053f2ef408739.png" width="80%"></div><br>
+<br>
+По этому протоколу пульт посылает информацию передающему радио-модулю, 
+который вставляется в пульт сзади. Многие приёмники, которые ставятся на
+ борт коптера, могут передавать сигналы управления для полётного 
+контроллера посредством PPM. Кроме того, почти в любом пульте есть 
+разъёмы для подключения второго пульта в режиме тренер-ученик и для 
+подключения пульта к симулятору, в которых тоже, как правило, 
+используется PPM.<br>
+<br>
+Запишем логическим анализатором сигнал с симуляторного выхода Turnigy 9X:<br>
+<br>
+<div style="text-align:center;"><img src="article_files/53eda5319a6d45b59ee6e265de445992.png"></div><br>
+<br>
+Каждая последовательность кодирует текущее состояние органов управления 
+на пульте. Обычно первые четыре значения (их ещё называют каналами) 
+соответствуют положению аналоговых стиков, а последующие – положению 
+тумблеров или потенциометров.<br>
+Минимальному положению органа управления соответствует интервал 1000 
+мкс, максимальному – 2000 мкс, среднему положению – 1500 мкс. Пачки 
+импульсов, или кадры, разделяются существенно бОльшими интервалами и 
+следуют с периодом 20–25 мс.<br>
+<br>
+Рассмотрим сигнал поближе:<br>
+<br>
+<div style="text-align:center;"><img src="article_files/70386d84efe24577a958767f8c5b7ae9.png"></div><br>
+<br>
+Как видим, три стика стоят в нейтральном положении (1, 3, 4), а один 
+находится в крайнем положении (2). Три тумблера выключены (5, 6, 7), а 
+последний включен (8). Микроконтроллер, выступающий в роли адаптера, 
+должен захватить такую последовательность, сложить значения в массив и 
+послать его по USB как команду с джойстика. Напишем декодер 
+последовательности импульсов.<br>
+<br>
+<h5><b>Прерывание по захвату</b></h5><br>
+После инициализации в <i>main.c</i> перед основным циклом <i>while</i> 
+запустим таймер TIM3 в режиме захвата Input Capture с 1-го канала, с 
+генерацией прерываний по захвату. Для этого используем соответствующую 
+функцию из HAL:<br>
+<br>
+<pre><code class="cpp hljs">HAL_TIM_IC_Start_IT(&amp;htim3, TIM_CHANNEL_1);
+</code></pre><br>
+Структура <i>htim3</i>, объявленная в <i>main.c</i> – это handler 
+таймера TIM3, который содержит в себе все структуры и переменные, 
+связанные с таймером: параметры для инициализации, указатели на все 
+регистры таймера (значение счётчика, делителя, все настройки, флаги 
+прерываний), указатель на handler DMA, который работает с этим таймером и
+ т.д. Разработчику не требуется искать, какие биты в каком регистре за 
+что отвечают и вручную их устанавливать и сбрасывать. Достаточно 
+передать handler в функцию HAL. Всё остальное HAL-библиотеки сделают 
+сами.<br>
+<br>
+Про принципы строения HAL более подробно рассказывается в документе <a href="http://www.st.com/st-web-ui/static/active/jp/resource/technical/document/user_manual/DM00122016.pdf">Description of STM32F3xx HAL drivers</a>
+ (UM1786). Надо отметить, что сами библиотеки HAL хорошо 
+документированы. Чтобы разобраться, как работает HAL для таймером и как 
+им пользоваться, можно почитать комментарии в файлах <i>stm32f3xx_hal_tim.h</i> и <i>stm32f3xx_hal_tim.c</i>.<br>
+<br>
+При каждом прерывании, которое генерирует таймер TIM3, вызывается обработчик <i>TIM3_IRQHandler</i>. Он находится в файле <i>stm32f3xx_it.c</i>, в нём в свою очередь вызывается стандартный для всех таймеров обработчик <i>HAL_TIM_IRQHandler</i>, и в него передаётся указатель на структуру htim3.<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">TIM3_IRQHandler</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span>
+</span>{
+  <span class="hljs-comment">/* USER CODE BEGIN TIM3_IRQn 0 */</span>
+
+  <span class="hljs-comment">/* USER CODE END TIM3_IRQn 0 */</span>
+  HAL_TIM_IRQHandler(&amp;htim3);
+  <span class="hljs-comment">/* USER CODE BEGIN TIM3_IRQn 1 */</span>
+
+  <span class="hljs-comment">/* USER CODE END TIM3_IRQn 1 */</span>
+}
+</code></pre><br>
+Если мы заглянем внутрь <i>HAL_TIM_IRQHandler</i> в файле <i>stm32f3xx_hal_tim.c</i>,
+ то увидим огромный обработчик, который проверяет флаги прерываний для 
+таймера, вызывает callback-функции и очищает флаги после выполнения. 
+Если случилось событие захвата, то он вызывает функцию <i>HAL_TIM_IC_CaptureCallback</i>. Она выглядит так:<br>
+<br>
+<pre><code class="cpp hljs">__<span class="hljs-function">weak <span class="hljs-keyword">void</span> <span class="hljs-title">HAL_TIM_IC_CaptureCallback</span><span class="hljs-params">(TIM_HandleTypeDef *htim)</span>
+</span>{
+<span class="hljs-comment">/* NOTE : This function Should not be modified, when the callback is needed, the __HAL_TIM_IC_CaptureCallback could be implemented in the user file
+*/</span>
+}
+</code></pre><br>
+Это означает, что мы можем переопределить эту функцию в <i>main.c</i>. Поэтому вставим перед функцией <i>int main(void)</i> этот callback:<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HAL_TIM_IC_CaptureCallback</span><span class="hljs-params">(TIM_HandleTypeDef *htim)</span>
+</span>{
+};
+</code></pre><br>
+Хотелось бы посмотреть, как выполняется прерывание. Добавим в него быстрое включение-выключение одного из выводов:<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HAL_TIM_IC_CaptureCallback</span><span class="hljs-params">(TIM_HandleTypeDef *htim)</span>
+</span>{
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, GPIO_PIN_SET);
+  __nop();__nop();__nop();__nop();__nop();__nop();
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, GPIO_PIN_RESET);
+};
+</code></pre><br>
+Вывод PE8 уже был инициализирован как выход. Между включением и выключением вставлены инструкции <i>__nop()</i>,
+ что формирует задержку на 1 такт. Это сделано, чтобы мой китайский 
+логический анализатор за $8, работающий на частоте 24 МГц не пропустил 
+слишком короткий импульс от микроконтроллера, работающего на 72 МГц. 
+Теперь скомпилируем проект <i>Project -&gt; Build target</i> и прошьём контроллер <i>Flash -&gt; Download</i>. Подключим PPM от пульта к PC6, и посмотрим анализатором, что происходит на PC6 и PE8.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/abf64ce2c6874057933df9edb58dff8f.png"></div><br>
+<br>
+Callback действительно вызывается в нужные моменты – сразу после того, 
+как произошёл переход входного сигнала из 1 в 0. Значит, всё было 
+сделано правильно.<br>
+<br>
+<h5><b>Сбор и обработка захваченных данных</b></h5><br>
+Отредактируем callback, чтобы каждое захваченное значение он складывал в буфер <i>captured_value</i>
+ без изменений. Если таймер захватил очень большое значение (больше 5000
+ мкс), это значит, что была зафиксирована пауза, пакет принят целиком и 
+его можно обрабатывать. Обработанные значения складываются в массив <i>rc_data</i>
+ из 5 элементов. В первые четыре складываются положения стиков, 
+приведённые к диапазону [0; 1000], в пятом выставляются отдельные биты в
+ соответствии с тумблерами, которые будут интерпретироваться как нажатия
+ кнопок на геймпаде.<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-keyword">uint16_t</span> captured_value[<span class="hljs-number">8</span>] = {<span class="hljs-number">0</span>};
+<span class="hljs-keyword">uint16_t</span> rc_data[<span class="hljs-number">5</span>] = {<span class="hljs-number">0</span>};
+<span class="hljs-keyword">uint8_t</span> pointer = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">uint8_t</span> data_ready = <span class="hljs-number">0</span>;
+
+...
+
+<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HAL_TIM_IC_CaptureCallback</span><span class="hljs-params">(TIM_HandleTypeDef *htim)</span>
+</span>{
+    <span class="hljs-keyword">uint8_t</span> i;
+    <span class="hljs-keyword">uint16_t</span> temp;
+    <span class="hljs-comment">// считываем значение из регистра захвата</span>
+    temp = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+    <span class="hljs-comment">// если интервал слишком длинный, значит, пакет принят</span>
+    <span class="hljs-keyword">if</span> ((temp &gt; <span class="hljs-number">5000</span>) &amp;&amp; (!data_ready))
+    {
+        pointer = <span class="hljs-number">0</span>;
+        <span class="hljs-comment">// приводим четыре значения со стиков к диапазону [0;1000]</span>
+        <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++)
+        {
+            <span class="hljs-keyword">if</span> (captured_value[i] &lt; <span class="hljs-number">1000</span>)
+                captured_value[i] = <span class="hljs-number">1000</span>;
+            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (captured_value[i] &gt; <span class="hljs-number">2000</span>)
+                captured_value[i] = <span class="hljs-number">2000</span>;
+            rc_data[i] = captured_value[i]<span class="hljs-number">-1000</span>;
+        };
+        <span class="hljs-comment">// записываем положения тумблеров как биты</span>
+        rc_data[<span class="hljs-number">4</span>] = <span class="hljs-number">0</span>;
+        <span class="hljs-keyword">if</span> (captured_value[<span class="hljs-number">4</span>] &gt; <span class="hljs-number">1500</span>)
+            rc_data[<span class="hljs-number">4</span>] |= (<span class="hljs-number">1</span>&lt;&lt;<span class="hljs-number">4</span>);
+        <span class="hljs-keyword">if</span> (captured_value[<span class="hljs-number">5</span>] &gt; <span class="hljs-number">1500</span>)
+            rc_data[<span class="hljs-number">4</span>] |= (<span class="hljs-number">1</span>&lt;&lt;<span class="hljs-number">5</span>);
+        <span class="hljs-keyword">if</span> (captured_value[<span class="hljs-number">6</span>] &gt; <span class="hljs-number">1500</span>)
+            rc_data[<span class="hljs-number">4</span>] |= (<span class="hljs-number">1</span>&lt;&lt;<span class="hljs-number">6</span>);
+        <span class="hljs-keyword">if</span> (captured_value[<span class="hljs-number">7</span>] &gt; <span class="hljs-number">1500</span>)
+            rc_data[<span class="hljs-number">4</span>] |= (<span class="hljs-number">1</span>&lt;&lt;<span class="hljs-number">7</span>);
+        data_ready = <span class="hljs-number">1</span>;
+    }
+    <span class="hljs-keyword">else</span> <span class="hljs-comment">// сохраняем одно принятое значение в буфер</span>
+    {
+        captured_value[pointer] = temp;
+        pointer++;
+    };
+    <span class="hljs-keyword">if</span> (pointer == <span class="hljs-number">8</span>) <span class="hljs-comment">// защита от переполнения</span>
+        pointer = <span class="hljs-number">0</span>;
+}
+</code></pre><br>
+Поясню, почему я разместил биты, соответствующие кнопкам, не в младшие 4
+ бита, а в биты с пятого по восьмой. В симуляторе предполагается 
+подключать геймпад от Xbox, где используются кнопки LB, RB, Start и 
+Back, а они имеют номера с 5 по 8.<br>
+<br>
+В главном цикле будет непрерывно крутиться проверка флага data_ready, по которому данные будут отправляться на компьютер.<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>)
+{
+  <span class="hljs-keyword">if</span> (data_ready)
+  {
+    <span class="hljs-comment">// здесь будет отправка данных на ПК</span>
+    data_ready = <span class="hljs-number">0</span>;
+  }
+}
+</code></pre><br>
+Чтобы проверить, как это работает, подключим пульт, снова скомпилируем и прошьём, а потом запустим отладку <i>Debug -&gt; Start/Stop Debug Session</i>.<br>
+Откроем окно для отслеживания переменных <i>View -&gt; Watch Windows -&gt; Watch 1</i> и добавим туда <i>captured_value</i> и <i>rc_data</i>.<br>
+Запустим отладку командой <i>Debug -&gt; Run</i> и в режиме реального времени, даже не добавляя точек останова, увидим, как вслед за движениями стиков меняются числа.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/5cf7dac9c152498e89ea3948a8549efb.png"></div><br>
+<br>
+Дальше нужно отправить данные на компьютер в виде команды джойстика.<br>
+<br>
+<h3><b>Настройка HID-устройства и создание HID Report Descriptor</b></h3><br>
+USB HID (Human Interface Device) – это класс устройств для 
+взаимодействия человека с компьютером. К ним относятся клавиатуры, мыши,
+ джойстики, геймпады, сенсорные панели. Главное преимущество 
+HID-устройств в том, что для них не требуется специальных драйверов в 
+любых операционных системах: Windows, OS X, Android и даже iOS (через 
+USB-Lightning adapter). Подробное описание можно прочитать в документе <a href="http://www.usb.org/developers/hidpage/HID1_11.pdf">Device Class Definition for HID</a>. Главное, что нам необходимо знать для создания PPM-USB-адаптера – что такое <i>HID Report</i> и <i>HID Report Descriptor</i>.<br>
+<br>
+HID-устройство посылает на компьютер пакеты байт в заранее установленном
+ формате. Каждый такой пакет – это HID Report. О формате данных 
+устройство сообщает компьютеру при подключении, отправляя HID Report 
+Descriptor – описание пакета, в котором указывается, сколько байт 
+содержит пакет и назначение каждого байта и бита в пакете. Например, HID
+ Report простой мыши состоит из четырёх байт: в первом байте содержится 
+информацию о нажатых кнопках, во втором и третьем байте – относительное 
+перемещение курсора по X и Y, а четвёртый байт – вращение колеса 
+прокрутки. Report Descriptor хранится в памяти контроллера устройства в 
+виде массива байтов.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/22fdd2aa67154365a6f89f6a2f7f2798.png" width="35%"></div><br>
+<br>
+Перед тем, как создавать дескриптор, я хотел бы отдельно остановиться на
+ терминологии. В англоязычной среде распространены два термина – <i>joystick</i> и <i>gamepad</i>. Словом <i>joystick</i> принято называть манипулятор, который держат одной рукой и наклоняют в разные стороны, а <i>gamepad</i>
+ – устройство с кнопками и стиками, которое держат двумя руками. 
+Русскоязычные пользователи обычно называют джойстиком и то, и другое. В 
+описании HID-устройства между джойстиком и геймпадом есть разница. 
+Авиамодельный пульт больше похож по своему функциональному назначению на
+ геймпад, поэтому в дальнейшем я иногда буду использовать термин 
+«геймпад».<br>
+<br>
+Мы сгенерировали проект, указав, что устройство будет выступать как 
+Human Interface Device. Это значит, что к проекту подключена библиотека 
+USB HID и уже был сформирован Device Descriptor. Он находится в файле <i>usbd_hid.c</i>, описывает репорт мыши и выглядит так:<br>
+<div class="spoiler"><b class="spoiler_title">HID_Mouse_Report_Descriptor</b><div class="spoiler_text"><pre><code class="cpp hljs">__ALIGN_BEGIN <span class="hljs-keyword">static</span> <span class="hljs-keyword">uint8_t</span> HID_MOUSE_ReportDesc[HID_MOUSE_REPORT_DESC_SIZE]  __ALIGN_END =
+{
+  <span class="hljs-number">0x05</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x09</span>,   <span class="hljs-number">0x02</span>,
+  <span class="hljs-number">0xA1</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x09</span>,   <span class="hljs-number">0x01</span>,
+
+  <span class="hljs-number">0xA1</span>,   <span class="hljs-number">0x00</span>,
+  <span class="hljs-number">0x05</span>,   <span class="hljs-number">0x09</span>,
+  <span class="hljs-number">0x19</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x29</span>,   <span class="hljs-number">0x03</span>,
+
+  <span class="hljs-number">0x15</span>,   <span class="hljs-number">0x00</span>,
+  <span class="hljs-number">0x25</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x95</span>,   <span class="hljs-number">0x03</span>,
+  <span class="hljs-number">0x75</span>,   <span class="hljs-number">0x01</span>,
+
+  <span class="hljs-number">0x81</span>,   <span class="hljs-number">0x02</span>,
+  <span class="hljs-number">0x95</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x75</span>,   <span class="hljs-number">0x05</span>,
+  <span class="hljs-number">0x81</span>,   <span class="hljs-number">0x01</span>,
+
+  <span class="hljs-number">0x05</span>,   <span class="hljs-number">0x01</span>,
+  <span class="hljs-number">0x09</span>,   <span class="hljs-number">0x30</span>,
+  <span class="hljs-number">0x09</span>,   <span class="hljs-number">0x31</span>,
+  <span class="hljs-number">0x09</span>,   <span class="hljs-number">0x38</span>,
+
+  <span class="hljs-number">0x15</span>,   <span class="hljs-number">0x81</span>,
+  <span class="hljs-number">0x25</span>,   <span class="hljs-number">0x7F</span>,
+  <span class="hljs-number">0x75</span>,   <span class="hljs-number">0x08</span>,
+  <span class="hljs-number">0x95</span>,   <span class="hljs-number">0x03</span>,
+
+  <span class="hljs-number">0x81</span>,   <span class="hljs-number">0x06</span>,
+  <span class="hljs-number">0xC0</span>,   <span class="hljs-number">0x09</span>,
+  <span class="hljs-number">0x3c</span>,   <span class="hljs-number">0x05</span>,
+  <span class="hljs-number">0xff</span>,   <span class="hljs-number">0x09</span>,
+
+  <span class="hljs-number">0x01</span>,   <span class="hljs-number">0x15</span>,
+  <span class="hljs-number">0x00</span>,   <span class="hljs-number">0x25</span>,
+  <span class="hljs-number">0x01</span>,   <span class="hljs-number">0x75</span>,
+  <span class="hljs-number">0x01</span>,   <span class="hljs-number">0x95</span>,
+
+  <span class="hljs-number">0x02</span>,   <span class="hljs-number">0xb1</span>,
+  <span class="hljs-number">0x22</span>,   <span class="hljs-number">0x75</span>,
+  <span class="hljs-number">0x06</span>,   <span class="hljs-number">0x95</span>,
+  <span class="hljs-number">0x01</span>,   <span class="hljs-number">0xb1</span>,
+
+  <span class="hljs-number">0x01</span>,   <span class="hljs-number">0xc0</span>
+};
+</code></pre></div></div><br>
+Создавать HID Report Descriptor вручную – занятие чрезвычайно трудоёмкое. Для облегчения задачи есть инструмент под названием <a href="http://www.usb.org/developers/hidpage#HID%20Descriptor%20Tool">HID Descriptor Tool</a>
+ (DT). Этой программой можно составить дескриптор для своего устройства.
+ В архиве с ним можно найти несколько примеров дескрипторов для разных 
+устройств.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/a3c6fd07c997415ab94ba603edda628d.png"></div><br>
+<br>
+<a href="http://eleccelerator.com/tutorial-about-usb-hid-report-descriptors/">Здесь</a>
+ очень хорошая статья про создание своего HID-дескриптора для мыши и 
+клавиатуры (на английском). Я расскажу на русском, как сделать 
+дескриптор для геймпада.<br>
+<br>
+HID-Report, отправляемый пультом должен содержать четыре 16-битных 
+значения для двух осей аналоговых стиков и 16 однобитных значений для 
+кнопок. Итого 10 байт. Его дескриптор, созданный в DT, будет выглядеть 
+так:<br>
+<br>
+<pre><code class="cpp hljs">    <span class="hljs-number">0x05</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">// USAGE_PAGE (Generic Desktop)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x05</span>,                    <span class="hljs-comment">// USAGE (Game Pad)</span>
+    <span class="hljs-number">0xa1</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">// COLLECTION (Application)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">//   USAGE (Pointer)</span>
+    <span class="hljs-number">0xa1</span>, <span class="hljs-number">0x00</span>,                    <span class="hljs-comment">//   COLLECTION (Physical)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x30</span>,                    <span class="hljs-comment">//     USAGE (X)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x31</span>,                    <span class="hljs-comment">//     USAGE (Y)</span>
+    <span class="hljs-number">0x15</span>, <span class="hljs-number">0x00</span>,                    <span class="hljs-comment">//     LOGICAL_MINIMUM (0)</span>
+    <span class="hljs-number">0x26</span>, <span class="hljs-number">0xe8</span>, <span class="hljs-number">0x03</span>,              <span class="hljs-comment">//     LOGICAL_MAXIMUM (1000)</span>
+    <span class="hljs-number">0x75</span>, <span class="hljs-number">0x10</span>,                    <span class="hljs-comment">//     REPORT_SIZE (16)</span>
+    <span class="hljs-number">0x95</span>, <span class="hljs-number">0x02</span>,                    <span class="hljs-comment">//     REPORT_COUNT (2)</span>
+    <span class="hljs-number">0x81</span>, <span class="hljs-number">0x02</span>,                    <span class="hljs-comment">//     INPUT (Data,Var,Abs)</span>
+    <span class="hljs-number">0xc0</span>,                          <span class="hljs-comment">//   END_COLLECTION</span>
+    <span class="hljs-number">0xa1</span>, <span class="hljs-number">0x00</span>,                    <span class="hljs-comment">//   COLLECTION (Physical)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x33</span>,                    <span class="hljs-comment">//     USAGE (Rx)</span>
+    <span class="hljs-number">0x09</span>, <span class="hljs-number">0x34</span>,                    <span class="hljs-comment">//     USAGE (Ry)</span>
+    <span class="hljs-number">0x15</span>, <span class="hljs-number">0x00</span>,                    <span class="hljs-comment">//     LOGICAL_MINIMUM (0)</span>
+    <span class="hljs-number">0x26</span>, <span class="hljs-number">0xe8</span>, <span class="hljs-number">0x03</span>,              <span class="hljs-comment">//     LOGICAL_MAXIMUM (1000)</span>
+    <span class="hljs-number">0x75</span>, <span class="hljs-number">0x10</span>,                    <span class="hljs-comment">//     REPORT_SIZE (16)</span>
+    <span class="hljs-number">0x95</span>, <span class="hljs-number">0x02</span>,                    <span class="hljs-comment">//     REPORT_COUNT (2)</span>
+    <span class="hljs-number">0x81</span>, <span class="hljs-number">0x02</span>,                    <span class="hljs-comment">//     INPUT (Data,Var,Abs)</span>
+    <span class="hljs-number">0xc0</span>,                          <span class="hljs-comment">//   END_COLLECTION</span>
+    <span class="hljs-number">0x05</span>, <span class="hljs-number">0x09</span>,                    <span class="hljs-comment">//   USAGE_PAGE (Button)</span>
+    <span class="hljs-number">0x19</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">//   USAGE_MINIMUM (Button 1)</span>
+    <span class="hljs-number">0x29</span>, <span class="hljs-number">0x10</span>,                    <span class="hljs-comment">//   USAGE_MAXIMUM (Button 16)</span>
+    <span class="hljs-number">0x15</span>, <span class="hljs-number">0x00</span>,                    <span class="hljs-comment">//   LOGICAL_MINIMUM (0)</span>
+    <span class="hljs-number">0x25</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">//   LOGICAL_MAXIMUM (1)</span>
+    <span class="hljs-number">0x75</span>, <span class="hljs-number">0x01</span>,                    <span class="hljs-comment">//   REPORT_SIZE (1)</span>
+    <span class="hljs-number">0x95</span>, <span class="hljs-number">0x10</span>,                    <span class="hljs-comment">//   REPORT_COUNT (16)</span>
+    <span class="hljs-number">0x81</span>, <span class="hljs-number">0x02</span>,                    <span class="hljs-comment">//   INPUT (Data,Var,Abs)</span>
+    <span class="hljs-number">0xc0</span>                           <span class="hljs-comment">// END_COLLECTION</span>
+</code></pre><br>
+Выглядит не менее устрашающе, чем дескриптор мыши. Но если разобраться, 
+что означает каждая строка, всё оказывается вполне понятным и логичным.<br>
+<br>
+USAGE показывает, как система должна интерпретировать данные, которые идут дальше.<br>
+Разновидностей Usage бывает очень много, они рассортированы по группам –
+ Usage Pages. Поэтому для того, чтобы выбрать какой-то определённый 
+Usage, надо сначала обратиться к соответствующей USAGE_PAGE. Про то, 
+какие бывают Usage можно прочитать в документе <a href="http://www.usb.org/developers/hidpage/Hut1_12v2.pdf">Hid Usage Tables</a>. В самом начале дескриптора мы указываем, что будет описываться джойстик:<br>
+<blockquote>USAGE_PAGE (Generic Desktop)<br>
+USAGE (Game Pad)</blockquote><br>
+COLLECTION объединяет в себе несколько связанных друг с другом наборов данных.<br>
+Physical Collection используются для данных, относящихся к одной 
+конкретной геометрической точке, например, одному аналоговому стику. 
+Application Collection используется для объединения разных функций в 
+одном устройстве. Например, клавиатура со встроенным трекпадом может 
+иметь две Application Collection. Мы описываем только джойстик, значит, 
+коллекция будет одна:<br>
+<blockquote>COLLECTION (Application)<br>
+…<br>
+END_COLLECTION</blockquote><br>
+После этого нужно указать, что будут описываться элементы, передающие 
+координаты. Usage Pointer применяется при описании мыши, джойстиков, 
+геймпадов, дигитайзеров:<br>
+<blockquote>USAGE (Pointer)</blockquote><br>
+Дальше следуют описания аналоговых стиков, объединённых в коллекции:<br>
+<blockquote>COLLECTION (Physical)<br>
+ <blockquote>USAGE (X)<br>
+ USAGE (Y)<br>
+ LOGICAL_MINIMUM (0)<br>
+ LOGICAL_MAXIMUM (1000)<br>
+ REPORT_SIZE (16)<br>
+ REPORT_COUNT (2)<br>
+ INPUT (Data,Var,Abs)</blockquote>END_COLLECTION</blockquote><br>
+USAGE здесь указывает, что используются значения отклонения по двум осям – X и Y.<br>
+LOGICAL_MINIMUM и LOGICAL_MAXIMUM задают, в каких пределах может меняться передаваемое значение.<br>
+REPORT_COUNT и REPORT_SIZE задают, соответственно, сколько чисел и 
+какого размера мы собираемся передать, а именно два 16-битных числа.<br>
+INPUT(Data,Var,Abs) означает, что данные поступают от устройства к 
+компьютеру, причём данные эти могут изменяться. Значения в нашем случае 
+абсолютные. От мыши, например, приходят относительные значения для 
+перемещения курсора. Иногда данные описываются как Const, а не Var. Это 
+нужно, чтоб передать не значащие биты. Например, в репорте мыши с тремя 
+кнопками передаются 3 бита Var для кнопок и 5 бит Const, чтобы дополнить
+ размер передачи до одного байта.<br>
+Как видим, описания осей X и Y сгруппированы вместе. У них одинаковый 
+размер, одинаковые пределы. Тот же самый аналоговый стик можно было бы 
+описать следующим образом, описывая каждую ось по отдельности. Работать 
+такой дескриптор будет аналогично предыдущему:<br>
+<blockquote>COLLECTION (Physical)<br>
+<blockquote> USAGE (X)<br>
+ LOGICAL_MINIMUM (0)<br>
+ LOGICAL_MAXIMUM (1000)<br>
+ REPORT_SIZE (16)<br>
+ REPORT_COUNT (1)<br>
+ INPUT (Data,Var,Abs)</blockquote><blockquote> USAGE (Y)<br>
+ LOGICAL_MINIMUM (0)<br>
+ LOGICAL_MAXIMUM (1000)<br>
+ REPORT_SIZE (16)<br>
+ REPORT_COUNT (1)<br>
+ INPUT (Data,Var,Abs)</blockquote>END_COLLECTION</blockquote><br>
+После первого стика описывается второй аналоговый стик. Его оси имеют 
+другой Usage, чтобы можно было отличить их от первого стика – Rx и Ry:<br>
+<blockquote>COLLECTION (Physical)<br>
+<blockquote> USAGE (Rx)<br>
+ USAGE (Ry)<br>
+ LOGICAL_MINIMUM (0)<br>
+ LOGICAL_MAXIMUM (1000)<br>
+ REPORT_SIZE (16)<br>
+ REPORT_COUNT (2)<br>
+ INPUT (Data,Var,Abs)</blockquote>END_COLLECTION</blockquote><br>
+Теперь нужно описать несколько кнопок геймпада. Это можно сделать следующим образом:<br>
+<blockquote>USAGE_PAGE (Button)<br>
+USAGE(Button 1)<br>
+USAGE(Button 2)<br>
+USAGE(Button 3)<br>
+…<br>
+USAGE(Button 16)</blockquote><br>
+Громоздкую запись однотипных кнопок можно сократить, использовав диапазон Usage:<br>
+<blockquote>USAGE_PAGE (Button)<br>
+USAGE_MINIMUM (Button 1)<br>
+USAGE_MAXIMUM (Button 16)</blockquote><br>
+Данные, передаваемые кнопками представляют собой 16 однобитовых значений, изменяющихся от 0 до 1:<br>
+<blockquote>LOGICAL_MINIMUM (0)<br>
+LOGICAL_MAXIMUM (1)<br>
+REPORT_SIZE (1)<br>
+REPORT_COUNT (16)<br>
+INPUT (Data,Var,Abs)</blockquote><br>
+Порядок строк в дескрипторе не строгий. Например, Logical_Minimum и 
+Logical_Maximum можно написать перед Usage(Button), или строки 
+Report_Size и Report_Count можно поменять местами.<br>
+Важно, чтобы перед командой Input располагались все нужные параметры для передачи данных (Usage, Mimimum, Maximum, Size, Count).<br>
+<br>
+Когда дескриптор сформирован, его можно проверить командой <i>Parse Descriptor</i> на наличие ошибок.<br>
+Если всё в порядке, то экспортируем его с расширением h. В файле <i>usbd_hid.c</i> заменим дескриптор на новый и скорректируем в <i>usbd_hid.h</i> размер дескриптора <i>HID_MOUSE_REPORT_DESC_SIZE</i> с 74 на 61.<br>
+<br>
+Отчёты отправляются по флагу <i>data_ready</i>. Для этого к <i>main.c</i> подключим заголовочный файл <i>usbd_hid.h</i> и в главном цикле вызовем функцию отправки отчёта. Массив <i>rc_data</i> имеет тип uint16, поэтому указатель на него надо привести к 8-битному типу и передать размер 10 вместо 5.<br>
+<br>
+<pre><code class="cpp hljs"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-string">"usbd_hid.h"</span></span>
+...
+<span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>)
+{
+  <span class="hljs-keyword">if</span> (data_ready)
+  {
+    USBD_HID_SendReport(&amp;hUsbDeviceFS, (<span class="hljs-keyword">uint8_t</span>*)rc_data, <span class="hljs-number">10</span>);
+    data_ready = <span class="hljs-number">0</span>;
+  };
+};
+</code></pre><br>
+Компилируем проект и прошиваем ещё раз.<br>
+<br>
+<h3><b>Подключение и использование</b></h3><br>
+Переподключим кабель USB из разъёма USB ST-LINK в разъём USER USB. 
+Windows обнаружит новое устройство и автоматически установит драйвер. 
+Зайдём в <i>Панель управления -&gt; Устройства и принтеры</i> и увидим наше устройство STM32 USB-PPM Adapter со значком геймпада.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/1ee5ad84654545dfbcec807073ef8207.png"></div><br>
+<br>
+В параметрах устройства можно увидеть, как крестик перемещается по полю и
+ столбики шевелятся вслед за перемещением стиков, а обозначения кнопок 
+загораются от переключения тумблеров. Проводить калибровку не 
+обязательно, потому что минимальные и максимальные значения уже были 
+заданы в дескрипторе.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/52c4b09db3074871b917aa74b3375de6.png"></div><br>
+<br>
+Запустив FPV FreeRider, мы увидим, как на главном экране на нарисованном
+ виртуальном геймпаде стики двигаются в соответствии с нашим пультом. 
+Если оси по какой-то причине назначены неправильно, их можно 
+перенастроить в разделе <i>Calibrate Controller</i>.<br>
+Тумблеры, соответствующие кнопкам на пульте, служат для переключения 
+полётных режимов (акробатический/стабилизированный), переключения вида 
+камеры (с борта/с земли), запуска полёта с начала или включения гонки на
+ время.<br>
+<br>
+<div style="text-align:center;"><img src="article_files/153bc23a87bd4fedad1dd9b04c2aae22.png" width="70%"></div><br>
+<br>
+<h3><b>Полетели!</b></h3><br>
+<iframe src="article_files/ilMeTba4EOE.html" allowfullscreen="" frameborder="0" height="315" width="560"></iframe><br>
+<br>
+На видео – результат нескольких дней моих тренировок. Пока я летаю с 
+автовыравниванием горизонта, а не в акробатическом режиме, как делают 
+все мастера FPV-гонок. В акро-режиме, если отпустить стики, коптер не 
+возвращается в горизонтальное положение автоматически, а продолжает 
+лететь под тем же углом, как и летел. Управлять в акро-режиме 
+значительно сложнее, но зато можно достичь большей скорости, 
+манёвренности, делать перевороты в воздухе и даже летать вверх-ногами.<br>
+<br>
+До мастеров уровня <a href="https://www.youtube.com/user/CharpuFPV">Charpu</a>
+ мне пока ещё очень далеко, но я продолжаю тренировки и могу сказать 
+точно, что идея гоночного мини-коптера меня заинтересовала ещё больше. И
+ в скором времени я обязательно займусь его постройкой и полётами уже не
+ в симуляторе, а в суровой реальности, с настоящими падениями, 
+поломанными пропеллерами, разбитыми моторами и сгоревшими 
+аккумуляторами. Но это уже тема для других статей :)<br>
+<br>
+<hr><br>
+Проект для Keil uVision 5 и STM32CubeMX лежит на <a href="https://github.com/alexeystn/stm32-ppm-usb-adapter">GitHub</a>.</div>
+    
+    <div class="post__tags">
+  <ul class="tags icon_tag">
+      <li><a href="https://geektimes.ru/search/?q=%5B%D0%BA%D0%B2%D0%B0%D0%B4%D1%80%D0%BE%D0%BA%D0%BE%D0%BF%D1%82%D0%B5%D1%80%5D&amp;target_type=posts" rel="tag">квадрокоптер</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5B%D1%81%D0%B8%D0%BC%D1%83%D0%BB%D1%8F%D1%82%D0%BE%D1%80%5D&amp;target_type=posts" rel="tag">симулятор</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bppm%5D&amp;target_type=posts" rel="tag">ppm</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bturnigy%209x%5D&amp;target_type=posts" rel="tag">turnigy 9x</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5B%D0%BF%D1%83%D0%BB%D1%8C%D1%82%5D&amp;target_type=posts" rel="tag">пульт</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bhid%5D&amp;target_type=posts" rel="tag">hid</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bstm32%5D&amp;target_type=posts" rel="tag">stm32</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bstm32f3discovery%5D&amp;target_type=posts" rel="tag">stm32f3discovery</a>, </li>
+      <li><a href="https://geektimes.ru/search/?q=%5Bcubemx%5D&amp;target_type=posts" rel="tag">cubemx</a></li>
+  </ul>
+</div>
+  </div>
+</div>
+
+
+        </div>
+      </div>
+
+      <div class="sidebar_right sidebar_content-area sticky_init">
+          
+          
+
+  <div class="sidebar-block sidebar-block_top-hubs js-tophubs is_visible">
+    <h2 class="sidebar-block__title">Рубрики</h2>
+    <div class="sidebar-block__content">
+      <ul class="navigation-links">
+          <li class="navigation-links__item">
+            <a href="https://geektimes.ru/posts/services/" class="navigation-links__item-link ">Компании и сервисы</a>
+            
+          </li>
+          <li class="navigation-links__item">
+            <a href="https://geektimes.ru/posts/software/" class="navigation-links__item-link ">Программное обеспечение</a>
+            
+          </li>
+          <li class="navigation-links__item">
+            <a href="https://geektimes.ru/posts/hardware/" class="navigation-links__item-link ">Железо и гаджеты</a>
+            
+          </li>
+          <li class="navigation-links__item">
+            <a href="https://geektimes.ru/posts/science/" class="navigation-links__item-link ">Научно-популярное</a>
+            
+          </li>
+          <li class="navigation-links__item">
+            <a href="https://geektimes.ru/posts/others/" class="navigation-links__item-link ">Разное</a>
+            
+          </li>
+      </ul>
+    </div>
+  </div>
+
+
+
+            
+
+    <div class="live-broadcast live-broadcast_habrahabr broadcast js-broadcast is_visible">
+      <h2 class="live-broadcast__title">Похожие публикации</h2>
+        <ul class="content-list content-list_similar-posts">
+            <li class="content-list__item">
+              <a href="https://geektimes.ru/post/275664/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'similar_posts', 'common'); }">На фестивале Древней Руси воин сбил копьём квадрокоптер</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/275664/#comments" class="content-list__item-counter icon_comments">94</a>
+            </li>
+            <li class="content-list__item">
+              <a href="https://geektimes.ru/post/274044/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'similar_posts', 'common'); }">Квадрокоптеры в России и США</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/274044/#comments" class="content-list__item-counter icon_comments">2</a>
+            </li>
+            <li class="content-list__item">
+              <a href="https://geektimes.ru/post/273700/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'similar_posts', 'common'); }">Квадрокоптеры DJI у AliExpress на 1 апреля — шутка?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/273700/#comments" class="content-list__item-counter icon_comments">4</a>
+            </li>
+            <li class="content-list__item">
+              <a href="https://geektimes.ru/post/272834/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'similar_posts', 'common'); }">ТОП 5 достоинств квадрокоптеров DJI Phantom последних поколений (с точки зрения гика)</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/272834/#comments" class="content-list__item-counter icon_comments">46</a>
+            </li>
+            <li class="content-list__item">
+              <a href="https://geektimes.ru/post/248036/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'similar_posts', 'common'); }">Тест квадрокоптера с онлайн-трансляцией на пульт за 103.99$</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/248036/#comments" class="content-list__item-counter icon_comments">0</a>
+            </li>
+        </ul>
+    </div>
+
+
+      </div>
+    </div>
+
+    <div class="column-wrapper">
+      <div class="content_left indented">
+        <div class="post-additionals">
+            <div class="infopanel_wrapper js-user_187912">
+    <ul class="postinfo-panel postinfo-panel_post" id="infopanel_post_263346">
+
+          <li class="postinfo-panel__item">
+            <div class="voting-wjt voting-wjt_infopanel js-voting  ">
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title="Срок голосования истек.">
+                  <span>↑</span>
+                </button>
+
+              <div class="voting-wjt__counter voting-wjt__counter_positive  js-mark">
+                  <span class="voting-wjt__counter-score js-score" title="Общий рейтинг 25: ↑25 и ↓0">+25</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title="Срок голосования истек.">
+                  <span>↓</span>
+                </button>
+
+            </div>
+          </li>
+
+      <li class="postinfo-panel__item">
+        <div class="views-count_post" title="Просмотры публикации">18k</div>
+      </li>
+
+      <li class="postinfo-panel__item">
+        <div class="favorite-wjt favorite">
+            <button type="button" class="favorite-wjt__button add" title="Добавить в избранное" onclick="return posts_add_to_favorite(this, '2', 263346);">
+              <span>В избранное</span>
+            </button>
+          <span class="favorite-wjt__counter js-favs_count" title="Количество пользователей, добавивших публикацию в избранное">151</span>
+        </div>
+      </li>
+
+
+
+
+      <li class="postinfo-panel__item postinfo-panel__item_align-right">
+          <!-- шеринг в соцсети -->
+          <ul class="post-share">
+            <li class="post-share__item">
+              <a href="https://twitter.com/intent/tweet?text=PPM-to-USB+%D0%B0%D0%B4%D0%B0%D0%BF%D1%82%D0%B5%D1%80+%D0%BD%D0%B0+STM32F3Discovery%2C+%D0%B8%D0%BB%D0%B8+%D0%9F%D0%BE%D0%B4%D0%BA%D0%BB%D1%8E%D1%87%D0%B0%D0%B5%D0%BC+%D0%B0%D0%B2%D0%B8%D0%B0%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9+%D0%BF%D1%83%D0%BB%D1%8C%D1%82+%D0%BA+%D0%BA%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D1%83+%D0%BA%D0%B0%D0%BA+HID-%D0%B4%D0%B6%D0%BE%D0%B9%D1%81%D1%82%D0%B8%D0%BA...+https://geektimes.ru/p/263346/+via+%40geektimes_ru+%23geektimes" class="post-share__item-link twitter" title="Опубликовать ссылку в Twitter" target="_blank"></a>
+            </li>
+            <li class="post-share__item">
+              <a href="https://vk.com/share.php?url=https://geektimes.ru/post/263346/" class="post-share__item-link vkontakte" title="Опубликовать ссылку во ВКонтакте" onclick="window.open(this.href, 'Опубликовать ссылку во Вконтакте', 'width=800,height=300'); return false"></a>
+            </li>
+            <li class="post-share__item">
+              <a href="https://www.facebook.com/sharer/sharer.php?u=https://geektimes.ru/post/263346/" class="post-share__item-link facebook" title="Опубликовать ссылку в Facebook" onclick="window.open(this.href, 'Опубликовать ссылку в Facebook', 'width=640,height=436,toolbar=0,status=0'); return false"></a>
+            </li>
+            <li class="post-share__item">
+              <a href="https://getpocket.com/edit?url=https://geektimes.ru/post/263346/" target="_blank" class="post-share__item-link pocket" title="Добавить ссылку в Pocket"></a>
+            </li>
+          </ul>
+
+      </li>
+    </ul>
+
+  </div>
+
+              <form action="/conversations/AlexeyStn/" method="GET" class="form form_admin-causes hidden" id="admin_causes">
+    <input name="moderation" value="263346" type="hidden">
+    <fieldset class="form__fieldset form__fieldset_admin-causes">
+      <legend class="form__legend">Выберите рекомендации для отправки автору:</legend>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="1" type="checkbox">
+        <span class="form__label-text">Указан только блог</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="2" type="checkbox">
+        <span class="form__label-text">Орфографические ошибки</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="3" type="checkbox">
+        <span class="form__label-text">Пунктуационные ошибки</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="4" type="checkbox">
+        <span class="form__label-text">Отступы</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="5" type="checkbox">
+        <span class="form__label-text">Текст-простыня</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="6" type="checkbox">
+        <span class="form__label-text">Короткие предложения</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="7" type="checkbox">
+        <span class="form__label-text">Смайлики</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="8" type="checkbox">
+        <span class="form__label-text">Много форматирования</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" value="9" type="checkbox">
+        <span class="form__label-text">Картинки</span>
+      </label>
+      <label class="form__label form__label_block">
+        <input class="form__input form__input_checkbox" name="id[]" "="" value="10" type="checkbox">
+        <span class="form__label-text">Ссылки</span>
+      </label>
+    </fieldset>
+
+    <button type="submit" class="btn btn_medium btn_grey">Отправить</button>
+  </form>
+
+              
+
+  <div class="author-info ">
+    <a href="https://geektimes.ru/users/AlexeyStn" class="author-info__image" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'profile', 'AlexeyStn');}">
+        <img src="article_files/cad7b8aa89a268091cf5897bbb47f5ac.png" class="author-info__image-pic">
+    </a>
+
+    <div class="author-info__desc js-user_187912">
+      <div class="author-info__username">
+          <a href="https://geektimes.ru/users/AlexeyStn" class="author-info__name" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'profile', 'AlexeyStn');}">Алексей Станкевич</a>
+        <a href="https://geektimes.ru/users/AlexeyStn" class="author-info__nickname" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'profile', 'AlexeyStn');}">@AlexeyStn</a>
+
+        <div class="karma__widjet voting-wjt voting-wjt_small js-karma  " title="Карма пользователя">
+
+                    <button type="button" class="voting-wjt__button voting-wjt__button_plus js-vote_plus" onclick="return userKarmaVote(this, 187912, 1, 1); if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'vote_plus', 'AlexeyStn');}" title="Повысить карму">
+                      <span>↑</span>
+                    </button>
+
+          <div class="voting-wjt__counter js-karma-mark voting-wjt__counter_positive " title="34 голоса">
+            <div class="voting-wjt__label">карма</div>
+            <div class="voting-wjt__counter-score js-karma_num">34,0</div>
+          </div>
+
+                  <button type="button" class="voting-wjt__button voting-wjt__button_minus js-vote_minus" onclick="return userKarmaVote(this, 187912, 1, -1); if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'vote_minus', 'AlexeyStn');}" title=" Понизить карму">
+                    <span>↓</span>
+                  </button>
+        </div>
+
+        <div class="user-rating" title="Рейтинг пользователя">
+          <span class="user-rating__label">рейтинг</span>
+          <span class="user-rating__value">0,0</span>
+        </div>
+
+            <div class="author-info__buttons buttons">
+              <a href="https://geektimes.ru/conversations/AlexeyStn/" class="button" title="Написать письмо" onclick="if (typeof ga === 'function') { ga('send', 'event', 'author_info_bottom', 'write_message', 'AlexeyStn'); }">
+                Написать
+              </a>
+            </div>
+      </div>
+
+        <div class="author-info__specialization">
+          Инженер
+        </div>
+
+    </div>
+  </div>
+
+        </div>
+
+        
+        
+
+  <div class="similar-posts similar-posts_full">
+    <h2 class="similar-posts__title">Самое читаемое</h2>
+    <div class="live-broadcast__tabs tabs" id="broadcast_tabs_posts">
+
+      <ul class="tabs__menu tabs__menu_posts menu menu_inline">
+        <li class="menu__item active"><a href="#broadcast_posts_now" class="menu__item-tab">Сейчас</a></li>
+        <li class="menu__item"><a href="#broadcast_posts_today" class="menu__item-tab">Сутки</a></li>
+        <li class="menu__item"><a href="#broadcast_posts_week" class="menu__item-tab">Неделя</a></li>
+        <li class="menu__item"><a href="#broadcast_posts_month" class="menu__item-tab">Месяц</a></li>
+      </ul>
+
+        <div style="display: block;" class="tabs__content tabs__content_reading" id="broadcast_posts_now">
+            <ul class="content-list content-list_posts content-list_most-reading">
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+10</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281044/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Насколько стабильно вещество, из которого мы состоим?</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">1,6k</span>
+                        <span class="inline-list__item favorites-count">5</span>
+                        <span class="inline-list__item comments-count">4</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+12</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281024/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Физика в мире животных: омар и его глаза</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">11,4k</span>
+                        <span class="inline-list__item favorites-count">16</span>
+                        <span class="inline-list__item comments-count">14</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+170</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/253626/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Молодому учёному из Краснодара грозит 11 лет строгого режима</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">150k</span>
+                        <span class="inline-list__item favorites-count">137</span>
+                        <span class="inline-list__item comments-count">593</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+12</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281030/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Краткая история слова «дрон»</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">7,7k</span>
+                        <span class="inline-list__item favorites-count">17</span>
+                        <span class="inline-list__item comments-count">12</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+36</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281018/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Четыре всадника Инфокалипсиса</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">14,1k</span>
+                        <span class="inline-list__item favorites-count">36</span>
+                        <span class="inline-list__item comments-count">44</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content tabs__content_reading" id="broadcast_posts_today">
+            <ul class="content-list content-list_posts content-list_most-reading">
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+12</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281024/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Физика в мире животных: омар и его глаза</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">11,4k</span>
+                        <span class="inline-list__item favorites-count">16</span>
+                        <span class="inline-list__item comments-count">14</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+36</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281018/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Четыре всадника Инфокалипсиса</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">14,1k</span>
+                        <span class="inline-list__item favorites-count">36</span>
+                        <span class="inline-list__item comments-count">44</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+41</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280986/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Почему нельзя использовать компьютерный ИБП для питания газового котла?</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">27,8k</span>
+                        <span class="inline-list__item favorites-count">123</span>
+                        <span class="inline-list__item comments-count">65</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+9</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/company/gearbest/blog/281004/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Xiaomi Mi Notebook Air 12.5 — почти макбук, но…</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">26,3k</span>
+                        <span class="inline-list__item favorites-count">22</span>
+                        <span class="inline-list__item comments-count">151</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+28</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/281008/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">В любой сложной ситуации лети вправо. Почему птицы не сталкиваются в полёте</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">23,1k</span>
+                        <span class="inline-list__item favorites-count">29</span>
+                        <span class="inline-list__item comments-count">54</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content tabs__content_reading" id="broadcast_posts_week">
+            <ul class="content-list content-list_posts content-list_most-reading">
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+210</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280844/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Дешевые авиабилеты… Или сеть мошеннических сайтов, ворующих деньги с карт. Мое расследование</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">96,7k</span>
+                        <span class="inline-list__item favorites-count">198</span>
+                        <span class="inline-list__item comments-count">371</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+59</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280904/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Sony не умеет готовить Android</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">42,3k</span>
+                        <span class="inline-list__item favorites-count">23</span>
+                        <span class="inline-list__item comments-count">333</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+102</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280694/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Лекарства от радиации в чрезвычайных ситуациях</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">35,8k</span>
+                        <span class="inline-list__item favorites-count">297</span>
+                        <span class="inline-list__item comments-count">96</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+44</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280812/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Kак взрываются литий-ионные аккумуляторы</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">35,6k</span>
+                        <span class="inline-list__item favorites-count">60</span>
+                        <span class="inline-list__item comments-count">66</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+27</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280918/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Новый стандарт Ethernet 802.3bz: до 5 Гбит/с на неэкранированной витой паре</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">32,4k</span>
+                        <span class="inline-list__item favorites-count">46</span>
+                        <span class="inline-list__item comments-count">161</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content tabs__content_reading" id="broadcast_posts_month">
+            <ul class="content-list content-list_posts content-list_most-reading">
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+97</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280586/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">НАСА объясняет, что положение «знаков зодиака» давно изменилось. Паника в женских журналах</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">158k</span>
+                        <span class="inline-list__item favorites-count">153</span>
+                        <span class="inline-list__item comments-count">879</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+210</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280844/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Дешевые авиабилеты… Или сеть мошеннических сайтов, ворующих деньги с карт. Мое расследование</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">96,7k</span>
+                        <span class="inline-list__item favorites-count">198</span>
+                        <span class="inline-list__item comments-count">371</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+68</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280222/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Почему я не понимаю продукцию Apple</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">78,5k</span>
+                        <span class="inline-list__item favorites-count">93</span>
+                        <span class="inline-list__item comments-count">873</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+65</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280436/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">Пост про капельку</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">77,8k</span>
+                        <span class="inline-list__item favorites-count">46</span>
+                        <span class="inline-list__item comments-count">54</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+                <li class="content-list__item">
+                  <div class="post-preview">
+                    <div class="post-preview__rating">+52</div>
+                    <div class="post-preview__desc">
+                      <a href="https://geektimes.ru/post/280440/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'post'); }" class="post-preview__link">«Мы используем лишь 10% от всего мозга» и другие мифы</a>
+                      <span class="post-preview__attrs inline-list inline-list_attrs">
+                        <span class="inline-list__item views-count">68,8k</span>
+                        <span class="inline-list__item favorites-count">105</span>
+                        <span class="inline-list__item comments-count">217</span>
+                      </span>
+                    </div>
+                  </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+  </div>
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <div class="column-wrapper column-wrapper_comments">
+    <div class="content_left">
+        
+  <div class="comments_list " id="comments">
+    <h2 class="title ">
+      Комментарии (<span id="comments_count">5</span>)
+          <span class="subscribe_comments">
+      отслеживать новые:
+      <label><input id="subscribe_comments" rel="{target_type:'2',target_id:263346 }" type="checkbox"> в почте</label>
+      <label><input id="tracker_comments" rel="{target_type:'2',target_id:263346 }" type="checkbox"> в трекере</label>
+    </span>
+
+    </h2>
+
+    
+
+    
+
+    <ul id="comments-list">
+      
+  <li class="comment_item" id="comment_8828368">
+    
+    <span class="parent_id" data-parent_id="0"></span>
+    <div class="comment_body">
+        <div class="info comments-list__item comment-item " rel="8828368">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info" rel="user-popover" data-user-login="Houston">
+            <a href="https://geektimes.ru/users/Houston/" class="comment-item__avatar">
+                <img src="article_files/26764f32e43b807103e220dcb42285cb_small.jpg" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://geektimes.ru/users/Houston/" class="comment-item__username">Houston</a>
+          </span>
+
+          <time class="comment-item__time_published">
+             8 октября 2015 в 12:36
+          </time>
+
+          <span class="comment-item__controls">
+            <a href="#comment_8828368" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+                <a href="#" class="icon_comment-favorite add" onclick="return comments_add_to_favorite(this, '3', 8828368 )" title="В избранное"></a>
+
+            <span class="js-comment_chidren" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8828368" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title=""><span>↑</span></button>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title=""><span>↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Спасибо большое за статью, очень интересно!<br>
+Ко мне уже едет набор для сборки ZMR250, но я поленился и заказал 
+готовый USB-переходник для подключения аппаратуры. Честно говоря, мне 
+даже не пришло в голову, что его можно сделать самостоятельно. 
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+              <a href="#reply" class="reply_link" onclick="return comment_show_reply_form(8828368 )">ответить</a>
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8828368">
+      
+      
+    </ul>
+  </li>
+
+  <li class="comment_item" id="comment_8828940">
+    
+    <span class="parent_id" data-parent_id="0"></span>
+    <div class="comment_body">
+        <div class="info comments-list__item comment-item " rel="8828940">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info" rel="user-popover" data-user-login="mahowik">
+            <a href="https://geektimes.ru/users/mahowik/" class="comment-item__avatar">
+                <img src="article_files/a9b2ebec90943d821203975039012ca6_small.jpg" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://geektimes.ru/users/mahowik/" class="comment-item__username">mahowik</a>
+          </span>
+
+          <time class="comment-item__time_published">
+             8 октября 2015 в 18:58
+          </time>
+
+          <span class="comment-item__controls">
+            <a href="#comment_8828940" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+                <a href="#" class="icon_comment-favorite add" onclick="return comments_add_to_favorite(this, '3', 8828940 )" title="В избранное"></a>
+
+            <span class="js-comment_chidren" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8828940" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title=""><span>↑</span></button>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title=""><span>↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Спасибо большоe за проект! <br>
+Как раз думал чем сегодня заняться + STM32F3-Discovery под рукой. Залил 
+Adapter.hex черeз STM32 ST-LINK Utility подключился к Turnigy 9X и даже 
+успешно полетал! :) 
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+              <a href="#reply" class="reply_link" onclick="return comment_show_reply_form(8828940 )">ответить</a>
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8828940">
+      
+      
+    </ul>
+  </li>
+
+  <li class="comment_item" id="comment_8830284">
+    
+    <span class="parent_id" data-parent_id="0"></span>
+    <div class="comment_body">
+        <div class="info comments-list__item comment-item " rel="8830284">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info" rel="user-popover" data-user-login="KonstantinSoloviov">
+            <a href="https://geektimes.ru/users/KonstantinSoloviov/" class="comment-item__avatar">
+                <span class="comment-item__avatar-img_default user-pic_green"></span>
+            </a>
+            <a href="https://geektimes.ru/users/KonstantinSoloviov/" class="comment-item__username">KonstantinSoloviov</a>
+          </span>
+
+          <time class="comment-item__time_published">
+             9 октября 2015 в 17:08
+          </time>
+
+          <span class="comment-item__controls">
+            <a href="#comment_8830284" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+                <a href="#" class="icon_comment-favorite add" onclick="return comments_add_to_favorite(this, '3', 8830284 )" title="В избранное"></a>
+
+            <span class="js-comment_chidren" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8830284" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark voting-wjt__counter_positive ">
+                <span class="voting-wjt__counter-score js-score" title="Всего 1: ↑1 и ↓0">+1</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title=""><span>↑</span></button>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title=""><span>↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Ага, USB HID! Отличненько, прикопал до времени, когда понадобится. За исходники на отдельное спасибо.
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+              <a href="#reply" class="reply_link" onclick="return comment_show_reply_form(8830284 )">ответить</a>
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8830284">
+      
+      
+    </ul>
+  </li>
+
+  <li class="comment_item" id="comment_8909676">
+    
+    <span class="parent_id" data-parent_id="0"></span>
+    <div class="comment_body">
+        <div class="info comments-list__item comment-item " rel="8909676">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info" rel="user-popover" data-user-login="bshep">
+            <a href="https://geektimes.ru/users/bshep/" class="comment-item__avatar">
+                <img src="article_files/79c0f6ed01ba99ee90a001c759c8c7cd_small.png" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://geektimes.ru/users/bshep/" class="comment-item__username">bshep</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            13 декабря 2015 в 18:33
+          </time>
+
+          <span class="comment-item__controls">
+            <a href="#comment_8909676" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+                <a href="#" class="icon_comment-favorite add" onclick="return comments_add_to_favorite(this, '3', 8909676 )" title="В избранное"></a>
+
+            <span class="js-comment_chidren" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8909676" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title=""><span>↑</span></button>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title=""><span>↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Спасибо за статью. Отличный проект выходного дня для начинающих ковырять STM32, вроде меня. <br>
+По образцу сделал такой же проект для STM32F103C8T6, но уткнулся в интересную проблему — может кто-то поопытнее поможет решить?<br>
+<br>
+В F103 выводы таймера TIM3 не толерантны к 5В, поэтому использовал 1й 
+канал таймера TIM1. Перенес куски кода с USB дескриптором, логикой 
+обработки прерываний, проверил что везде вместо TIM3 используется TIM1… 
+Не работает!<br>
+ <br>
+Отладчик показывает что не вызывается обработчик прерывания таймера. 
+Смотрю в регистр TIM1_DIER: бит разрешения прерывания СС1IE установлен, 
+источник PPM сигнала подключен, но обработчик не вызывается! От 
+безысходности ткнул в бит разрешения прерывания по событию Trigger 
+(TIE), запустил на выполнение, — и все чудесным образом завертелось, 
+обработчик стал вызываться. <br>
+<br>
+Кто-то может объяснить почему так? Или хотя бы какой раздел документации копать? :) 
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+              <a href="#reply" class="reply_link" onclick="return comment_show_reply_form(8909676 )">ответить</a>
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8909676">
+      
+  <li class="comment_item" id="comment_8918674">
+    
+    <span class="parent_id" data-parent_id="8909676"></span>
+    <div class="comment_body">
+        <div class="info comments-list__item comment-item " rel="8918674">
+
+          <div class="folding-dot-holder"><div class="folding-dot"></div></div>
+
+          <span class="comment-item__user-info" rel="user-popover" data-user-login="bshep">
+            <a href="https://geektimes.ru/users/bshep/" class="comment-item__avatar">
+                <img src="article_files/79c0f6ed01ba99ee90a001c759c8c7cd_small.png" alt="" class="comment-item__avatar-img">
+            </a>
+            <a href="https://geektimes.ru/users/bshep/" class="comment-item__username">bshep</a>
+          </span>
+
+          <time class="comment-item__time_published">
+            19 декабря 2015 в 23:12
+              <span class="comment-item__time_changed icon_comment-edit" title="Kомментарий был изменён">
+                <i class="comment-item__sign_changed">(комментарий был изменён)</i>
+              </span>
+          </time>
+
+          <span class="comment-item__controls">
+            <a href="#comment_8918674" class="icon_comment-anchor" title="Ссылка на комментарий"></a>
+
+                <a href="#" class="icon_comment-favorite add" onclick="return comments_add_to_favorite(this, '3', 8918674 )" title="В избранное"></a>
+
+              <span class="icon_comment-tree js-comment_tree" data-id="8918674" data-parent_id="8909676" title="Показать ветку комментариев"></span>
+              <a href="#comment_8909676" class="icon_comment-parent js-comment_parent" data-id="8918674" data-parent_id="8909676" title="Показать предыдущий комментарий"></a>
+            <span class="js-comment_chidren" title="Вернуться к ответу"></span>
+          </span>
+
+            <div id="voting_8918674" class="voting-wjt voting-wjt_comments js-voting   ">
+
+              <div class="voting-wjt__counter js-mark  ">
+                <span class="voting-wjt__counter-score js-score" title="Всего 0: ↑0 и ↓0">0</span>
+              </div>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_plus js-plus" title=""><span>↑</span></button>
+
+                <button type="button" disabled="disabled" class="voting-wjt__button voting-wjt__button_minus js-minus" title=""><span>↓</span></button>
+            </div>
+        </div>
+
+        <div class="message html_format ">
+          Разобрался сам. Проблема была в неправильной настройке таймера
+ в Cube MX: нужно было включить обработчик прерывания «Capture and 
+Compare» вместо «Trigger and Commutation» во вкладке «NVIC settings» в 
+окне конфигурации таймера:<br>
+<br>
+<img src="article_files/41b68ae28b954659bae6e77ae226481a.png" alt="image"><br>
+<br>
+Портированный на <b>STM32F103C8</b> проект для CooCox и CubeMX лежит <a href="https://github.com/voroshkov/STM32-RC-USB-Adapter">здесь</a>
+        </div>
+
+        <div class="reply_form_placeholder"></div>
+
+        <div class="reply">
+              <a href="#reply" class="reply_link" onclick="return comment_show_reply_form(8918674 )">ответить</a>
+
+        </div>
+    </div>
+
+    <ul class="reply_comments" id="reply_comments_8918674">
+      
+      
+    </ul>
+  </li>
+
+      
+    </ul>
+  </li>
+
+      
+    </ul>
+
+  </div>
+
+
+        
+            <div class="comments_form" id="comments_form_placeholder">
+              <h2 class="title"><a href="#" onclick="return comment_show_form()">Написать комментарий</a></h2>
+              <form action="/json/comment/" method="post" id="comments_form">
+
+                <div id="preview_placeholder" class="hidden html_format"></div>
+                <input name="ts" value="1475403259" type="hidden">
+                <input name="tt" value="2" type="hidden">
+                <input name="ti" value="263346" type="hidden">
+                <input name="comment_id" value="0" type="hidden">
+                <input name="parent_id" value="0" type="hidden">
+
+                <div class="editor">
+                    <div class="panel">
+                      <div class="wysiwyg_wrapper">
+  <div class="can_use_html">
+    <a href="#html_help" onclick="$(this).parents('.wysiwyg_wrapper').find('.help_holder').toggleClass('hidden');return false;">html-теги</a>
+  </div>
+
+
+  <a class="btn" title="Жирный" onclick="return habraWYG.insertTagWithText(this, 'b');" href="#" tabindex="-1"><span class="g-icon g-icon-bold"></span></a>
+  <a class="btn" title="Курсив" onclick="return habraWYG.insertTagWithText(this, 'i');" href="#" tabindex="-1"><span class="g-icon g-icon-italic"></span></a>
+  <a class="btn" title="Подчёркнутый" onclick="return habraWYG.insertTagWithText(this, 'u');" href="#" tabindex="-1"><span class="g-icon g-icon-underline"></span></a>
+  <a class="btn" title="Зачёркнутый" onclick="return habraWYG.insertTagWithText(this, 's');" href="#" tabindex="-1"><span class="g-icon g-icon-strike"></span></a>
+  <a class="btn" title="Цитата" onclick="return habraWYG.insertTagWithText(this, 'blockquote');" href="#" tabindex="-1"><span class="g-icon g-icon-quote"></span></a>
+  <div class="btn btn-dropdown">
+    <span class="g-icon g-icon-list"></span>
+    <select name="list" onchange="habraWYG.insertList(this);" onclick="return false;" tabindex="-1">
+      <option selected="selected" value="" class="title">Список:</option>
+      <option value="ul">UL LI</option>
+      <option value="ol">OL LI</option>
+    </select>
+  </div>
+
+  <a class="btn" title="Пользователь" onclick="return habraWYG.insertUser(this);" href="#" tabindex="-1"><span class="g-icon g-icon-users"></span></a>
+  <a class="btn" title="Вставить ссылку" onclick="return habraWYG.insertLink(this);" href="#" tabindex="-1"><span class="g-icon g-icon-link"></span></a>
+  <a class="btn" title="Вставить изображение" onclick="return habraWYG.insertImage(this);" href="#" tabindex="-1"><span class="g-icon g-icon-images"></span></a>
+  <a class="btn" title="Медиаэлемент" onclick="return habraWYG.insertTagWithText(this, 'oembed');" href="#" tabindex="-1"><span class="g-icon g-icon-video"></span></a>
+  <a class="btn" title="Вставить твит" onclick="return habraWYG.insertTagWithText(this, 'twitter');" href="#" tabindex="-1"><span class="g-icon g-icon-twitter"></span></a>
+  <a class="btn" title="Вставить спойлер" onclick="return habraWYG.insertSpoiler(this);" href="#" tabindex="-1"><span class="g-icon g-icon-spoiler"></span></a>
+
+  <div class="btn btn-dropdown">
+    <span class="g-icon g-icon-code"></span>
+    <select class="with-title" name="source" title="Используйте этот тэг для вставки кода" onchange="habraWYG.insertSource(this);" tabindex="-1">
+      <option selected="selected" value="" class="title">Source:</option>
+      <option value="code">Code</option>
+      <option value="bash">Bash</option>
+      <option value="cs">C#</option>
+      <option value="cpp">C++</option>
+      <option value="css">CSS</option>
+      <option value="cos">Caché Object Script</option>
+      <option value="diff">Diff</option>
+      <option value="html">HTML</option>
+      <option value="xml">XML</option>
+      <option value="java">Java</option>
+      <option value="javascript">JavaScript</option>
+      <option value="php">PHP</option>
+      <option value="perl">Perl</option>
+      <option value="python">Python</option>
+      <option value="ruby">Ruby</option>
+      <option value="sql">SQL</option>
+      <option value="1c">1C</option>
+      <option value="actionscript">ActionScript</option>
+      <option value="apache">Apache</option>
+      <option value="axapta">Axapta</option>
+      <option value="cmake">CMake</option>
+      <option value="coffeescript">CoffeeScript</option>
+      <option value="dos">DOS</option>
+      <option value="delphi">Delphi</option>
+      <option value="django">Django</option>
+      <option value="erlang">Erlang</option>
+      <option value="erlang_repl">Erlang REPL</option>
+      <option value="glsl">GLSL</option>
+      <option value="go">Go</option>
+      <option value="haskell">Haskell</option>
+      <option value="lisp">Lisp</option>
+      <option value="lua">Lua</option>
+      <option value="mel">MEL</option>
+      <option value="markdown">Markdown</option>
+      <option value="matlab">Matlab</option>
+      <option value="nginx">Nginx</option>
+      <option value="objectivec">Objective C</option>
+      <option value="rust">Rust</option>
+      <option value="scala">Scala</option>
+      <option value="smalltalk">Smalltalk</option>
+      <option value="tex">TeX</option>
+      <option value="vbscript">VBScript</option>
+      <option value="vhdl">VHDL</option>
+      <option value="vala">Vala</option>
+    </select>
+  </div>
+
+  <div class="help_holder hidden">
+    <h4>Теги Хабрахабра</h4>
+
+    <dl class="block_semi">
+      <dt>&lt;cut&gt;</dt>
+      <dd class="description">Используется только в текстах публикаций, скрывает под кат часть текста, следующую за тегом (будет написано «Читать дальше»).</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;cut text="Подробности" /&gt;</dt>
+      <dd class="description">Так можно превратить надпись «Читать дальше» в любой текст.</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;source lang="Язык"&gt;&lt;/source&gt;</dt>
+      <dd class="description">Подсвечивает исходный код (на выбор:
+      Bash,  C#,  C++,  CSS,  Diff,  HTML, XML,  Ini,  Java,  
+JavaScript,  PHP,  Perl,  Python,  Ruby,  SQL,
+      1C,  AVR Assembler,  ActionScript,  Apache,  Axapta,  CMake,  
+CoffeeScript,  DOS, .bat,  Delphi,  Django,  Erlang,  Erlang REPL,  Go, 
+ Haskell,  Lisp,  Lua,  MEL,  Markdown,  Matlab,  Nginx,  Objective C,  
+Parser3,  Python profile,  RenderMan,  Rust,  Scala,  Smalltalk,  TeX,  
+VBScript,  VHDL,  Vala
+      ).</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;oembed&gt;http://...&lt;/oembed&gt;</dt>
+      <dd class="description">Вставка интерактивных элементов: видео, twitter, instagram, slideshare, scribd и других.</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;twitter&gt;http://...&lt;/twitter&gt;</dt>
+      <dd class="description">Добавляет в публикацию твит. Необходимо 
+указать полную ссылку на твит. Например: 
+&lt;twitter&gt;https://twitter.com/habrahabr/status/522334394175213568&lt;/twitter&gt;</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;slideshow&gt;http://...&lt;/slideshow&gt;</dt>
+      <dd class="description">Вставка интерактивного слайд-шоу. Пока поддерживается только сервис Slideshare.net.</dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>@username</dt>
+      <dd class="description">
+        Выводит имя пользователя в тексте и отправляет пользователю 
+уведомление о том, что его упомянули в публикации/комментарии.
+        Вы можете использовать конструкцию <b>@username</b>, где <b>username</b> — это имя пользователя.
+      </dd>
+    </dl>
+
+    <dl class="block_semi">
+      <dt>&lt;spoiler title="Заголовок"&gt;Содержимое&lt;/spoiler&gt;</dt>
+      <dd class="description">Вставка спойлера (разворачиваемый блок информации).</dd>
+    </dl>
+
+    <h4>Стандартные</h4>
+    <table class="wide">
+      <tbody><tr>
+        <td>
+          <dl class="block_semi">
+            <dt>&lt;h1&gt;&lt;/h1&gt;<br>
+              ...<br>
+              &lt;h6&gt;&lt;/h6&gt;
+            </dt>
+            <dd class="description">Заголовки разного уровня.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>&lt;img src="" /&gt;</dt>
+            <dd class="description">Вставка изображения, в атрибуте src нужно указывать полный путь к изображению. Возможно выравнивание картинки атрибутом align.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>&lt;a href="http://..."&gt;Ссылка&lt;/a&gt;</dt>
+            <dd class="description">Вставка ссылки, в атрибуте href указывается желаемый интернет-адрес или якорь (anchor) для навигации по странице.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>&lt;anchor&gt;Example1&lt;/anchor&gt;</dt>
+            <dd class="description">Тег для указания якоря. Для вызова используйте тег вставки ссылок (&lt;a href="#Example1"&gt;Текст&lt;/a&gt;).</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>&lt;b&gt;&lt;/b&gt;<br>
+              &lt;strong&gt;&lt;/strong&gt;</dt>
+            <dd class="description">Выделение важного текста, на странице выделяется жирным начертанием.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>&lt;i&gt;&lt;/i&gt;<br>
+              &lt;em&gt;&lt;/em&gt;</dt>
+            <dd class="description">Выделение важного текста, на странице выделяется курсивом.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;s&gt;&lt;/s&gt;<br>
+              &lt;strike&gt;&lt;/strike&gt;
+            </dt>
+            <dd class="description">Текст между этими тегами будет отображаться как зачеркнутый.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;u&gt;&lt;/u&gt;
+            </dt>
+            <dd class="description">Текст между этими тегами будет отображаться как подчеркнутый.</dd>
+          </dl>
+        </td>
+
+        <td width="5%"></td>
+
+        <td>
+          <dl class="block_semi">
+            <dt>
+              &lt;hr /&gt;
+            </dt>
+            <dd class="description">Тег для вставки горизонтальной линии.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;blockquote&gt;&lt;/blockquote&gt;
+            </dt>
+            <dd class="description">Используйте этот тег для выделения цитат.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;table&gt;&lt;/table&gt;<br>
+              &lt;th&gt;&lt;/th&gt;<br>
+              &lt;td&gt;&lt;/td&gt;<br>
+              &lt;tr&gt;&lt;/tr&gt;
+            </dt>
+            <dd class="description">Набор тегов для создания таблицы. 
+Тег &lt;td&gt; обозначает ячейку таблицы, тег &lt;th&gt; - ячейку в 
+заголовке, &lt;tr&gt; - строчку таблицы. Все содержимое таблицы 
+помещайте в тег &lt;table&gt;.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;sup&gt;&lt;/sup&gt;<br>
+              &lt;sub&gt;&lt;/sub&gt;
+            </dt>
+            <dd class="description">Текст, заключенный в тег &lt;sup&gt; отображается в виде верхнего индекса, &lt;sub&gt; - в виде нижнего.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;abbr title="" &gt;&lt;/abbr&gt;<br>
+              &lt;acronym title="" &gt;&lt;/acronym&gt;
+            </dt>
+            <dd class="description">Тегом &lt;abbr&gt; выделяется 
+аббревиатура, в атрибуте title указывайте её расшифровку. Используйте 
+тег &lt;acronym&gt; для устоявшихся аббревиатур.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;pre&gt;&lt;/pre&gt;
+            </dt>
+            <dd class="description">Текст в теге &lt;pre&gt; не форматируется автоматически.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;nobr&gt;&lt;/nobr&gt;<br>
+
+              &lt;br clear="all|left||right" /&gt;
+            </dt>
+            <dd class="description">Текст, помещенный в тег 
+&lt;nobr&gt;, не переносится на странице; для принудительного переноса 
+текста используйте тег &lt;br /&gt;; для аккуратного выравнивания 
+изображений используйте атрибут clear="all|left||right" в теге &lt;br 
+/&gt;.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;ul&gt;&lt;/ul&gt;<br>
+              &lt;li&gt;&lt;/li&gt;
+            </dt>
+            <dd class="description">Ненумерованный список; каждый элемент списка задается тегом &lt;li&gt;, набор элементов списка помещайте в тег &lt;ul&gt;.</dd>
+          </dl>
+
+          <dl class="block_semi">
+            <dt>
+              &lt;ol&gt;&lt;/ol&gt;<br>
+              &lt;li&gt;&lt;/li&gt;
+            </dt>
+            <dd class="description">Нумерованный список; каждый элемент списка задается тегом &lt;li&gt;, набор элементов списка помещайте в тег &lt;ol&gt;.</dd>
+          </dl>
+        </td>
+      </tr>
+    </tbody></table>
+
+    <div class="close_html">
+      <a href="#html_help_close" onclick="$(this).parents('.wysiwyg_wrapper').find('.help_holder').toggleClass('hidden');return false;">закрыть</a>
+    </div>
+  </div>
+</div>
+                    </div>
+                  <div class="text-holder">
+                    <textarea cols="30" rows="10" name="text" id="comment_text"></textarea>
+                  </div>
+                    <div class="editor__footer">
+                      <label class="markdown_checkbox" for="comment_markdown">
+                        <input name="comment_markdown" id="comment_markdown" type="checkbox">Использовать <a href="https://geektimes.ru/info/help/markdown/" target="_blank"><strong>Markdown</strong>-разметку</a>
+                      </label>
+                    </div>
+                  <span id="error_text" class="error"></span>
+                </div>
+
+                <div class="form-additionals">
+                  <div class="buttons">
+                    <input class="preview disableble" value="Предпросмотр" disabled="disabled" onclick="comment_preview(this.form, this)" type="button">
+                    <input class="submit disableble" value="Написать" disabled="disabled" onclick="comment_send(this.form, this)" type="button">
+                    <input class="edit hidden disableble" value="Сохранить" disabled="disabled" onclick="comment_update(this.form, this)" type="button">
+                    
+                    <span class="time_left" title="Оставшееся время редактирования комментария"></span>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="comments-form__placeholder form-placeholder hidden" id="moderated_placeholder">
+              <h3 class="form-placeholder__title">Ваш комментарий отправлен на модерацию</h3>
+              <p class="form-placeholder__text">Комментарий будет виден 
+другим пользователям в&nbsp;случае, если он&nbsp;будет одобрен автором 
+публикации или одним из&nbsp;модераторов ресурса.</p>
+              <button type="button" class="btn btn_medium btn_grey js-hide_placeholder">Продолжить</button>
+            </div>
+
+
+      
+<form action="/json/favorites/" method="post" id="edit_tags_form" class="hidden">
+  <input name="action" value="add" type="hidden">
+  <input name="ti" value="0" type="hidden">
+  <input name="tt" value="0" type="hidden">
+  <label>Пометьте топик понятными вам метками, если хотите</label>
+  <input autocomplete="off" name="tags_string" class="tags_string" type="text">
+  <div class="description">Метки лучше разделять запятой. Например: <i>общение, социальные сети, myspace.com, подростки, мердок</i></div>
+  <input value="Сохранить" class="submit" type="submit"> или <a href="#" class="close" onclick="return close_edit_tags()">закрыть</a>
+</form>
+
+    </div>
+    <div class="sidebar_right">
+          
+
+
+  <div class="live-broadcast live-broadcast_geektimes">
+    <h2 class="live-broadcast__title">Что обсуждают</h2>
+    <div class="live-broadcast__tabs tabs" id="broadcast_tabs_comments">
+      <ul class="tabs__menu tabs__menu_comments menu menu_inline">
+        <li class="menu__item active"><a href="#broadcast_comments_now" class="menu__item-tab">Сейчас</a></li>
+        <li class="menu__item"><a href="#broadcast_comments_yesterday" class="menu__item-tab">Вчера</a></li>
+        <li class="menu__item"><a href="#broadcast_comments_week" class="menu__item-tab">Неделя</a></li>
+      </ul>
+
+        <div style="display: block;" class="tabs__content" id="broadcast_comments_now">
+            <ul class="content-list content-list_comments">
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/company/postnauka/blog/281010/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Квантовая телепортация</a>&nbsp;&nbsp;<a href="https://geektimes.ru/company/postnauka/blog/281010/#comments" class="content-list__item-counter icon_comments">86</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280892/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Илон Маск представит план колонизации Марса в&nbsp;21:30&nbsp;по&nbsp;МСК&nbsp;[текстовая трансляция завершена]</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280892/#comments" class="content-list__item-counter icon_comments">315</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281044/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Насколько стабильно вещество, из которого мы состоим?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281044/#comments" class="content-list__item-counter icon_comments">4</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/company/scione/blog/281022/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Благодаря крысам человек может избавиться от фобий</a>&nbsp;&nbsp;<a href="https://geektimes.ru/company/scione/blog/281022/#comments" class="content-list__item-counter icon_comments">11</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281018/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Четыре всадника Инфокалипсиса</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281018/#comments" class="content-list__item-counter icon_comments">44</a>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content" id="broadcast_comments_yesterday">
+            <ul class="content-list content-list_comments">
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281018/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Четыре всадника Инфокалипсиса</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281018/#comments" class="content-list__item-counter icon_comments">44</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281024/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Физика в мире животных: омар и его глаза</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281024/#comments" class="content-list__item-counter icon_comments">14</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281030/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Краткая история слова «дрон»</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281030/#comments" class="content-list__item-counter icon_comments">12</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/company/scione/blog/281022/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Благодаря крысам человек может избавиться от фобий</a>&nbsp;&nbsp;<a href="https://geektimes.ru/company/scione/blog/281022/#comments" class="content-list__item-counter icon_comments">11</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/281044/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Насколько стабильно вещество, из которого мы состоим?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281044/#comments" class="content-list__item-counter icon_comments">4</a>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content" id="broadcast_comments_week">
+            <ul class="content-list content-list_comments">
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280862/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Почему люди верят в гороскопы?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280862/#comments" class="content-list__item-counter icon_comments">384</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280844/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Дешевые авиабилеты… Или сеть мошеннических сайтов, ворующих деньги с карт. Мое расследование</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280844/#comments" class="content-list__item-counter icon_comments">371</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280904/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Sony не умеет готовить Android</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280904/#comments" class="content-list__item-counter icon_comments">333</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280892/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Илон Маск представит план колонизации Марса в&nbsp;21:30&nbsp;по&nbsp;МСК&nbsp;[текстовая трансляция завершена]</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280892/#comments" class="content-list__item-counter icon_comments">315</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/276094/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Религия в гаджетах</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/276094/#comments" class="content-list__item-counter icon_comments">247</a>
+                </li>
+            </ul>
+        </div>
+        <div style="display: none;" class="tabs__content" id="broadcast_comments_month">
+            <ul class="content-list content-list_comments">
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280586/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">НАСА объясняет, что положение «знаков зодиака» давно изменилось. Паника в женских журналах</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280586/#comments" class="content-list__item-counter icon_comments">879</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280222/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Почему я не понимаю продукцию Apple</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280222/#comments" class="content-list__item-counter icon_comments">873</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/279862/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Городские парусники, транспорт будущего или укрощение моноколеса</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/279862/#comments" class="content-list__item-counter icon_comments">390</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280862/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Почему люди верят в гороскопы?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280862/#comments" class="content-list__item-counter icon_comments">384</a>
+                </li>
+                <li class="content-list__item">
+                  <a href="https://geektimes.ru/post/280844/" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'live_broadcast_activity', 'comment'); }" class="content-list__item-link">Дешевые авиабилеты… Или сеть мошеннических сайтов, ворующих деньги с карт. Мое расследование</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/280844/#comments" class="content-list__item-counter icon_comments">371</a>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+  </div>
+
+    </div>
+  </div>
+
+  <div class="column-wrapper column-wrapper_bottom column-wrapper_bordered">
+    <div class="content_left">
+      
+
+  <div class="live-broadcast live-broadcast_feed">
+    <h2 class="live-broadcast__title live-broadcast__title_feed">Интересные публикации</h2>
+
+    <div class="dropdown dropdown_broadcast">
+      <button aria-expanded="false" tabindex="0" type="button" class="btn btn_outline_grey btn_large icon_cog dropdown-toggle" data-toggle="dropdown">
+      </button>
+      <div class="dropdown-container">
+        <ul class="n-dropdown-menu n-dropdown-menu_feed" id="filter">
+          <li class="n-dropdown-menu__item">
+            <label class="checkbox checkbox_custom">
+              <input class="checkbox__input" name="habrahabr" checked="checked" type="checkbox">
+              <span class="checkbox__label">Хабрахабр</span>
+            </label>
+          </li>
+          <li class="n-dropdown-menu__item">
+            <label class="checkbox checkbox_custom">
+              <input class="checkbox__input" name="geektimes" checked="checked" type="checkbox">
+              <span class="checkbox__label">Geektimes</span>
+            </label>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="live-broadcast__content">
+      <ul class="content-list content-list_feed" id="list" data-posts-count="5">
+          <li class="content-list__item content-list__item_geektimes" data-type="geektimes">
+            <a href="https://geektimes.ru/post/281044/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Насколько стабильно вещество, из которого мы состоим?</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281044/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">3</a>
+          </li>
+          <li class="content-list__item content-list__item_habrahabr" data-type="habrahabr">
+            <a href="https://habrahabr.ru/post/311512/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Пишем Ruby gem для Yandex Direct API</a>&nbsp;&nbsp;<a href="https://habrahabr.ru/post/311512/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">0</a>
+          </li>
+          <li class="content-list__item content-list__item_habrahabr" data-type="habrahabr">
+            <a href="https://habrahabr.ru/post/311506/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Пишем расширение с помощью библиотеки php-cpp для php7</a>&nbsp;&nbsp;<a href="https://habrahabr.ru/post/311506/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">4</a>
+          </li>
+          <li class="content-list__item content-list__item_habrahabr" data-type="habrahabr">
+            <a href="https://habrahabr.ru/post/311462/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">FreeType 2.7 — превосходное качество шрифтов Linux</a>&nbsp;&nbsp;<a href="https://habrahabr.ru/post/311462/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">30</a>
+          </li>
+          <li class="content-list__item content-list__item_habrahabr" data-type="habrahabr">
+            <a href="https://habrahabr.ru/post/311486/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Почему успешные в Китае игры не получают популярности на Западе?</a>&nbsp;&nbsp;<a href="https://habrahabr.ru/post/311486/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">36</a>
+          </li>
+          <li class="content-list__item content-list__item_habrahabr hidden" data-type="habrahabr">
+            <a href="https://habrahabr.ru/post/311492/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Обходим детектирование виртуальной машины программами в VMWare</a>&nbsp;&nbsp;<a href="https://habrahabr.ru/post/311492/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">12</a>
+          </li>
+          <li class="content-list__item content-list__item_geektimes hidden" data-type="geektimes">
+            <a href="https://geektimes.ru/post/281024/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Физика в мире животных: омар и его глаза</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281024/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">14</a>
+          </li>
+          <li class="content-list__item content-list__item_geektimes hidden" data-type="geektimes">
+            <a href="https://geektimes.ru/post/281030/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Краткая история слова «дрон»</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281030/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">12</a>
+          </li>
+          <li class="content-list__item content-list__item_geektimes hidden" data-type="geektimes">
+            <a href="https://geektimes.ru/post/281018/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Четыре всадника Инфокалипсиса</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281018/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">44</a>
+          </li>
+          <li class="content-list__item content-list__item_geektimes hidden" data-type="geektimes">
+            <a href="https://geektimes.ru/post/281020/" class="content-list__item-link" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'post'); }" data-utm="?utm_source=tm_megamozg&amp;utm_medium=tm_block&amp;utm_campaign=tm_promo">Принцип работы «забывающего мемристора» похож на принцип работы нейрона мозга</a>&nbsp;&nbsp;<a href="https://geektimes.ru/post/281020/#comments" onclick="if (typeof ga === 'function') { ga('send', 'event', 'tm_block', 'interesting_posts', 'comment'); }" class="content-list__item-counter icon_comments">18</a>
+          </li>
+      </ul>
+    </div>
+  </div>
+
+    </div>
+
+    <div class="sidebar_right">
+    </div>
+  </div>
+
+  <script>
+    window._yaparams = {'hubs':[]};
+    // hubs to GA
+      _yaparams['hubs'].push('DIY (DIY или Сделай сам)');
+      _yaparams['hubs'].push('multicopters (Мультикоптеры)');
+  </script>
+
+      </div>
+      <div class="layout__footer">
+        <div class="footer_panel">
+  <div id="footer">
+      <dl class="user">
+        <dt><a href="https://geektimes.ru/users/svpcom/">svpcom</a></dt>
+        <dd><a href="https://geektimes.ru/feed/">Лента</a></dd>
+        <dd><a href="https://geektimes.ru/tracker/">Трекер</a></dd>
+          <dd><a href="https://geektimes.ru/topic/add/">Написать</a></dd>
+          <dd><a href="https://geektimes.ru/conversations/">Диалоги</a></dd>
+          <dd><a href="https://geektimes.ru/auth/settings/">Настройки</a></dd>
+      </dl>
+    <dl>
+      <dt>Разделы</dt>
+      <dd><a href="https://geektimes.ru/posts/top/">Публикации</a></dd>
+      <dd><a href="https://geektimes.ru/hubs/">Хабы</a></dd>
+      <dd><a href="https://geektimes.ru/companies/">Компании</a></dd>
+      <dd><a href="https://geektimes.ru/users/">Пользователи</a></dd>
+      <dd><a href="https://toster.ru/?_aa=press_anykey">Q&amp;A</a></dd>
+      <dd><a href="https://geektimes.ru/sandbox/">Песочница</a></dd>
+    </dl>
+    <dl>
+      <dt>Инфо</dt>
+      <dd><a href="https://geektimes.ru/info/about/">О сайте</a></dd>
+      <dd><a href="https://geektimes.ru/info/help/rules/">Правила</a></dd>
+      <dd><a href="https://geektimes.ru/info/help/">Помощь</a></dd>
+      <dd><a href="https://geektimes.ru/info/agreement/">Соглашение</a></dd>
+    </dl>
+    <dl>
+      <dt>Услуги</dt>
+      <dd><a href="https://special.geektimes.ru/advertising/">Реклама</a></dd>
+        <dd><a href="https://special.geektimes.ru/">Спецпроекты</a></dd>
+        <dd><a href="https://special.geektimes.ru/corporate/">Тарифы</a></dd>
+      <dd><a href="https://special.geektimes.ru/content/">Контент</a></dd>
+      <dd><a href="https://special.geektimes.ru/workshops/">Семинары</a></dd>
+    </dl>
+    <dl>
+      <dt>Разное</dt>
+      <dd><a href="https://habrahabr.ru/apps/">Приложения Хабра</a></dd>
+      <dd><a href="https://special.habrahabr.ru/google/lab/" target="_blank">Тест-драйв</a></dd>
+        <dd><a href="https://special.geektimes.ru/hello_startup/geektimes/" target="_blank">Помощь стартапам</a></dd>
+        <dd><a href="https://special.habrahabr.ru/#hr">Работа в IT</a></dd>
+    </dl>
+    <div class="copyright">
+      <div class="about">
+        <a href="https://tmtm.ru/">© TM</a>
+        <br><br>
+        <a href="https://geektimes.ru/feedback/">Служба поддержки</a><br><br>
+            <a href="https://m.geektimes.ru/post/263346/?mobile=yes">Мобильная версия</a><br><br>
+        <div class="social_accounts">
+          <a href="https://twitter.com/geektimes_ru" class="tw"></a>
+          <a href="https://www.facebook.com/geektimes.ru" class="fb"></a>
+          <a href="https://vk.com/geektimes" class="vk"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </div>
+      <a href="#" class="layout__elevator cd-fade-out hidden" id="scroll_to_top" title="Наверх">
+        <svg class="icon-svg icon-svg_arrow_up_rounded">
+          <use xlink:href="https://geektimes.ru/images/svg-icons/symbol-defs.svg#icon-arrow_up_rounded"></use>
+        </svg>
+      </a>
+    </div>
+
+    <script type="text/javascript">
+  // global vars
+  var g_base_url = 'geektimes.ru';
+  var g_show_xpanel = true;
+  var g_base_fullurl = 'https://geektimes.ru/';
+  var g_is_guest = true;
+  var g_user_login = 'svpcom';
+  var g_user_id = 46875;
+  var g_user_avatar = '//geektimes.ru/i/avatars/stub-user-middle.gif';   
+</script> 
+    <script src="article_files/app_002.js"></script>
+    <script src="article_files/app.js"></script>
+    <script src="article_files/svgxuse.js"></script>
+    <script src="article_files/flexibility.js"></script>
+    
+
+    	<script type="text/javascript" src="article_files/a"></script>
+
+    
+
+
+
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+  (function (d, w, c) {
+    (w[c] = w[c] || []).push(function() {
+      try {
+        if (typeof (_yaparams) != 'undefined') {
+          w.yaCounter26722401 = new Ya.Metrika({
+            id: 26722401,
+            clickmap: true,
+            trackLinks: true,
+            accurateTrackBounce: true,
+            webvisor: true,
+            params: _yaparams
+          });
+        } else {
+          w.yaCounter26722401 = new Ya.Metrika({
+            id: 26722401,
+            clickmap: true,
+            trackLinks: true,
+            accurateTrackBounce: true,
+            webvisor: true
+          });
+        }
+      } catch(e) { }
+    });
+
+    var n = d.getElementsByTagName("script")[0],
+            s = d.createElement("script"),
+            f = function () { n.parentNode.insertBefore(s, n); };
+    s.type = "text/javascript";
+    s.async = true;
+    s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+    if (w.opera == "[object Opera]") {
+      d.addEventListener("DOMContentLoaded", f, false);
+    } else { f(); }
+  })(document, window, "yandex_metrika_callbacks");
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/26722401" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+    
+    
+  
+
+<div id="AutocompleteContainter_2634d" style="position: absolute; z-index: 9999; top: 20900px; left: 0px;"><div class="autocomplete-w1"><div class="autocomplete" id="Autocomplete_2634d" style="display: none; width: 300px; max-height: 400px;"></div></div></div><div id="xpanel"><a href="#refresh" class="refresh"></a><a style="display: none;" href="#prev_new" class="prev_new" title="По клику (горячая клавиша - k) переходит к предыдущему непрочитанному комментарию.">↑</a><a style="display: none;" href="#new" class="new" title="Количество новых комментариев. По клику (горячая клавиша - f) переходит к первому непрочитанному комментарию.">0</a><a style="display: none;" href="#next_new" class="next_new" title="По клику (горячая клавиша - j) переходит к следующему непрочитанному комментарию.">↓</a></div><div id="AutocompleteContainter_5b11f" style="position: absolute; z-index: 9999; top: 2px; left: 0px;"><div class="autocomplete-w1"><div class="autocomplete" id="Autocomplete_5b11f" style="display: none; width: 300px; max-height: 400px;"></div></div></div></body></html>
